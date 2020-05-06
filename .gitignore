@@ -1,0 +1,4 @@
+*.pyc
+.idea
+plugins/tasks.py
+run.sh

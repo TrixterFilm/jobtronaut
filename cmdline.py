@@ -1,0 +1,153 @@
+# ######################################################################################################################
+#  Copyright 2020 TRIXTER GmbH                                                                                         #
+#                                                                                                                      #
+#  Redistribution and use in source and binary forms, with or without modification, are permitted provided             #
+#  that the following conditions are met:                                                                              #
+#                                                                                                                      #
+#  1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following #
+#  disclaimer.                                                                                                         #
+#                                                                                                                      #
+#  2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the        #
+#  following disclaimer in the documentation and/or other materials provided with the distribution.                    #
+#                                                                                                                      #
+#  3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote     #
+#  products derived from this software without specific prior written permission.                                      #
+#                                                                                                                      #
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,  #
+#  INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE   #
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,  #
+#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS        #
+#  OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF           #
+#  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY    #
+#  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                                 #
+# ######################################################################################################################
+
+""" jobtronaut commandline parser """
+
+import argparse
+import ast
+import logging
+
+from .plugins import Plugins
+from .author import Job
+
+from .constants import LOGGING_NAMESPACE
+
+_LOG = logging.getLogger("{}.cmdline".format(LOGGING_NAMESPACE))
+
+
+class StoreDict(argparse.Action):
+    """ Argparse action that converts incoming job/task arguments to their correct types
+    and automatically stores them in a dict.
+    """
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        super(StoreDict, self).__init__(option_strings, dest, nargs, **kwargs)
+
+    def __call__(self, parser, namespace, arguments, option_string=None):
+        setattr(namespace, self.dest, dict())
+        for arg in arguments:
+            key, value = tuple(arg.split(":", 1))
+            value = self._infer_type(value)
+            getattr(namespace, self.dest)[key] = value
+
+    @staticmethod
+    def _infer_type(value):
+        try:
+            typed_value = ast.literal_eval(value)
+        except (ValueError, SyntaxError):
+            # ast.literal_eval throws a ValueError in case it encounters a string
+            # and a SyntaxError if the string starts with a / (essentially a path)
+            typed_value = value
+        return typed_value
+
+
+class AssembleEnvkeys(argparse.Action):
+    """ Argparse action that mangles the incoming env arguments into a format
+    that tractor expects and also automatically prepend 'setenv'.
+    """
+    def __call__(self, parser, namespace, arguments, option_string=None):
+        envkey = ["setenv {0}".format(" ".join([_.replace(":", "=") for _ in arguments]))]
+        setattr(namespace, self.dest, envkey)
+
+
+def parse_args():
+    """ defines the argparser for the commandline submission
+
+    Returns:
+        Parsed arguments
+    """
+    # define the actual valid arguments here
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers()
+
+    submit_parser = subparsers.add_parser("submit", help="Submit a job to the farm.")
+    submit_parser.set_defaults(func=submit)
+    submit_parser.add_argument("--paused", action="store_const", const=True, default=False,
+                               help="Submit the job in a paused state.")
+    submit_parser.add_argument("--task", type=str, required=True,
+                               help="Set the root task for the job.")
+    submit_parser.add_argument("--title", type=str, default="",
+                               help="Set a custom job title.")
+    submit_parser.add_argument("--service", "--hostmask", dest="service", type=str, default="",
+                               help="Specify a hostmask to limit the blades this job can run on.")
+    submit_parser.add_argument("--afterjids", dest="jids", type=str,
+                               help="Only start the job when the jobs with these ids are done.")
+    submit_parser.add_argument("--priority", type=int, default=100,
+                               help="Set the priority of the job.")
+    submit_parser.add_argument("--tags", nargs='+', type=str, default=[],
+                               help="Speficy custom limit tags on the job.")
+    submit_parser.add_argument("--projects", nargs='+', type=str, default=[],
+                               help="Specify the projects of the job.")
+    submit_parser.add_argument("--args", nargs="+", dest="arguments", action=StoreDict,
+                               default=dict(), metavar="ARGNAME:ARGVALUE",
+                               help="Job Arguments. Supported value types are: str, int, " "float, list")
+    submit_parser.add_argument("--env", nargs="+", dest="environment", action=AssembleEnvkeys,
+                               metavar="ENVVAR:ENVVALUE",
+                               help="Custom environment variables that will be set prior to a command's execution on the "
+                                    "farm")
+    list_parser = subparsers.add_parser("list", help="Can list all known plugins.")
+    list_parser.add_argument("type", default="all", choices=["all", "tasks", "processors"],
+                             help="Define which plugins you want to list.")
+    list_parser.set_defaults(func=list_)
+
+    info_parser = subparsers.add_parser("info", help="Get more info on a specific plugin.")
+    info_parser.add_argument("plugin", type=str,
+                             help="Specify the plugin name for which you want more information.")
+    info_parser.set_defaults(func=info)
+
+    args = parser.parse_args()
+    args.func(args)
+
+
+def submit(args):
+    """ Function that simply runs the argparser and creates and submits
+    a job according the the specified arguments.
+    """
+    # @todo Add arguments to the jobs and tasks metadata
+    try:
+        jid = Job(args.task, args.arguments).submit(title=args.title or args.task,
+                                                    service=args.service,
+                                                    paused=args.paused,
+                                                    tags=args.tags,
+                                                    priority=args.priority,
+                                                    projects=args.projects or [],
+                                                    envkey=args.environment or [])
+        _LOG.info("Successfully submitted job \"{0}\" with jid: {1}".format(args.title or args.task, jid))
+    except Exception as error:
+        _LOG.error("Job submission was NOT successful.", exc_info=True)
+        raise error
+
+
+def list_(args):
+    plugins = Plugins()
+    if args.type in ["all", "tasks"]:
+        for _ in plugins.tasks:
+            print(plugins.task(_).info())
+    if args.type in ["all", "processors"]:
+        for _ in plugins.processors:
+            print(plugins.processor(_).info())
+
+
+def info(args):
+    print(Plugins().plugin(args.plugin).info(short=False))
+
