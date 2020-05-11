@@ -84,6 +84,8 @@ def parse_args():
     submit_parser.set_defaults(func=submit)
     submit_parser.add_argument("--paused", action="store_const", const=True, default=False,
                                help="Submit the job in a paused state.")
+    submit_parser.add_argument("--local", action="store_const", const=True, default=False,
+                               help="Submit the job locally. All commands will be enforced to run on the spoolhost.")
     submit_parser.add_argument("--task", type=str, required=True,
                                help="Set the root task for the job.")
     submit_parser.add_argument("--title", type=str, default="",
@@ -125,13 +127,15 @@ def submit(args):
     """
     # @todo Add arguments to the jobs and tasks metadata
     try:
-        jid = Job(args.task, args.arguments).submit(title=args.title or args.task,
-                                                    service=args.service,
-                                                    paused=args.paused,
-                                                    tags=args.tags,
-                                                    priority=args.priority,
-                                                    projects=args.projects or [],
-                                                    envkey=args.environment or [])
+        jid = Job(args.task, arguments=args.arguments, local=args.local).submit(
+            title=args.title or args.task,
+            service=args.service,
+            paused=args.paused,
+            tags=args.tags,
+            priority=args.priority,
+            projects=args.projects or [],
+            envkey=args.environment or []
+        )
         _LOG.info("Successfully submitted job \"{0}\" with jid: {1}".format(args.title or args.task, jid))
     except Exception as error:
         _LOG.error("Job submission was NOT successful.", exc_info=True)

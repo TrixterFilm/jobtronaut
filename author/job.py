@@ -46,6 +46,8 @@ from ..constants import (
     ENVIRONMENT_RESOLVER
 )
 from ..plugins import Plugins
+from ..query.command import get_local_state
+
 
 _LOG = logging.getLogger("{}.author.job".format(LOGGING_NAMESPACE))
 
@@ -86,10 +88,11 @@ class Job(author.Job):
         "requires_arguments_cache",
         "task",
         "append_instances",
-        "_flat_hierarchy"
+        "_flat_hierarchy",
+        "local"
     ]
 
-    def __init__(self, task, arguments={}, append_instances=False, **kwargs):
+    def __init__(self, task, arguments={}, append_instances=False, local=None, **kwargs):
         """
 
         Args:
@@ -103,6 +106,10 @@ class Job(author.Job):
             This normally is not required, as our `serial` task ensures a serial
             relationship by nature, but due to a Tractor bug this will not work
             if the hierarchy was expanded via `TR_EXPAND_CHUNK`.
+            local (bool): if True commands won't be created as RemoteCommand instances,
+            but as regular Command instances that will only run on the spoolhost; if None
+            the job initialization handles the command type inheritance automatically when
+            running as active command
             **kwargs ():
         """
         super(Job, self).__init__()
@@ -112,8 +119,20 @@ class Job(author.Job):
 
         self.envkey = []
 
-        # attaching the job object to our main task
-        # which will by bypassed for all child tasks
+        # define the commands type
+        job_id = os.getenv("TR_ENV_JID")
+        command_id = os.getenv("TR_ENV_CID")
+
+        if local is not None:
+            # explicitly set local value
+            self.local = local
+        # check if the job is initialized inside a running command on tractor
+        elif job_id and command_id:
+            # inherit the current local attribute when running on tractor
+            # otherwise use the passed value
+            self.local = get_local_state(job_id=job_id, command_id=command_id)
+        else:
+            self.local = False
 
         # unfortunately attributes is reserved so we have to name it differently
         self.job_attributes = kwargs.get("job_attributes", {})

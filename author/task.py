@@ -32,9 +32,7 @@ and cannot be defined without a task.
 """
 
 import copy
-from collections import (Iterable,
-                         namedtuple
-                         )
+
 import difflib
 import inspect
 import logging
@@ -43,8 +41,9 @@ import re
 import tempfile
 import uuid
 
+from collections import Iterable
+
 from tractor.api import author
-import tx  # only required to get the executable path, should be removed asap
 
 from . import scripts
 from .argument import (
@@ -59,6 +58,7 @@ from ..constants import (
     LOGGING_NAMESPACE
 )
 from ..plugins import Plugins
+from .command import Command
 from .job import (
     Job,
     jobs_to_task
@@ -228,6 +228,22 @@ class Task(author.Task):
     @property
     def no_retry(self):
         return (self.flags & self.Flags.NO_RETRY) > 0
+
+    # use our patched Command
+    def addCommand(self, command):
+        """Add the specified Command to command list of the Task."""
+        if not isinstance(command, Command):
+            raise TypeError("%s is not an instance of Command" % str(command))
+        self.attributeByName["cmds"].addElement(command)
+
+    # use our patched Command
+    def newCommand(self, **kw):
+        """Instantiate a new Command element, add to command list, and return
+        element.
+        """
+        command = Command(**kw)
+        self.addCommand(command)
+        return command
 
     @staticmethod
     def _has_cmd(cls):
@@ -466,11 +482,19 @@ class Task(author.Task):
 
             cmd = self._get_commandlist_with_additional_command_flags(cmd)
 
-            task.newCommand(argv=cmd,
-                            service=",".join(task.services),
-                            tags=task.tags,
-                            retryrc=task.retryrc
-                            )
+            # during the recursive task creation we always have a valid job instance
+            # but during the processing in tractor we don't
+            local = False
+            if task.job and task.job.local:
+                local = True
+
+            task.newCommand(
+                argv=cmd,
+                service=",".join(task.services),
+                tags=task.tags,
+                retryrc=task.retryrc,
+                local=local
+            )
             _LOG.debug(_cmd_str.format(" ".join(cmd), task))
 
             if task.no_retry:
@@ -482,7 +506,8 @@ class Task(author.Task):
                         self._get_executable("python-pipe"),
                         os.path.join(scripts.__path__[0], "neutralisecommands.py")
                     ],
-                    service="linux64"  # looks like we need to set a service explicitly?!?
+                    service="linux64",  # looks like we need to set a service explicitly?!?
+                    local=local
                 )
 
     def _get_commandlist_with_resolved_executable(self, task):
@@ -622,7 +647,7 @@ class Task(author.Task):
         return infostr.format(**BASH_STYLES)
 
     @staticmethod
-    def __EXPAND__(root_task_name, arguments_mapping):  # don't remove the arguments_mapping parameter!
+    def __EXPAND__(root_task_name, arguments_mapping, local=None):  # don't remove the arguments_mapping parameter!
         """ handles a task expansion
 
         The given rootask defines the relation between subtasks.
@@ -633,6 +658,7 @@ class Task(author.Task):
             root_task_name (str): the name of the root task that defines the downstream hierarchy of subtasks
             arguments_mapping (dict): a mapping of the arguments <-> subtask relation. A valid entry mus exist
                 for EVERY task that exists in root_task.required_tasks.
+            local (bool): the local state of new commands that will be created; check the Job docs for more information
 
         Returns:
 
@@ -652,7 +678,7 @@ class Task(author.Task):
                 eval(  # yayaya we all know that's evil... who cares ;)
                     re.sub(
                         r"['\"]{1}\w+['\"]{1}",
-                        "Job(\g<0>, arguments_mapping[\g<0>])",
+                        "Job(\g<0>, arguments_mapping[\g<0>], local={})".format(local),
                         "{}".format(root_task.required_tasks)
                     )
                 )
