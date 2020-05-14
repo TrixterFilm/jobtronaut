@@ -28,7 +28,7 @@ import argparse
 import ast
 import logging
 
-from .plugins import Plugins
+from .author.plugins import Plugins
 from .author import Job
 
 from .constants import LOGGING_NAMESPACE

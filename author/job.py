@@ -45,7 +45,7 @@ from ..constants import (
     INHERIT_ENVIRONMENT,
     ENVIRONMENT_RESOLVER
 )
-from ..plugins import Plugins
+from .plugins import Plugins
 from ..query.command import get_local_state
 
 
