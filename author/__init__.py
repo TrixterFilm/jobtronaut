@@ -49,3 +49,5 @@ from processor import (
     ProcessorSchemas,
     supported_schemas
 )
+
+from plugins import Plugins

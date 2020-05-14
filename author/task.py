@@ -57,7 +57,7 @@ from ..constants import (
     EXECUTABLE_RESOLVER,
     LOGGING_NAMESPACE
 )
-from ..plugins import Plugins
+from .plugins import Plugins
 from .command import Command
 from .job import (
     Job,

@@ -51,12 +51,6 @@ class Singleton(object):
 
 class Plugins(Singleton):
 
-    MODULE_NAMES = ["tasks",
-                    "processors"]
-
-    # do we ever need to support more than that *.pyd??
-    MODULE_EXTENSIONS = [".py"]
-
     def __init__(self):
         if not Singleton._initialized or not ENABLE_PLUGIN_CACHE:
             Singleton._initialized = True
@@ -79,9 +73,9 @@ class Plugins(Singleton):
         modules = []
         for name, path in [(os.path.splitext(_f)[0], os.path.join(searchpath, _f))
                                             for _f in os.listdir(searchpath)
-                                            if os.path.splitext(_f)[1] in self.MODULE_EXTENSIONS
-                                            and os.path.splitext(_f)[0] in self.MODULE_NAMES]:
-            modulename = "farm_submitter_{}_{}".format(name, index)
+                                            if os.path.splitext(_f)[1] == ".py"
+                                            and os.path.splitext(_f)[0] != "__init__"]:
+            modulename = "jobtronaut_{}_{}".format(name, index)
             try:
                 modules.append(imp.load_source(modulename, path))
                 _LOG.debug("Sourced {0} as module named {1}".format(path, modulename))
