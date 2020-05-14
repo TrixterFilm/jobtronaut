@@ -562,7 +562,7 @@ class Task(author.Task):
             classname = re.sub(r"Overriden$", "", self.__class__.__name__)
         else:
             classname = self.__class__.__name__
-        script = "from jobtronaut.plugins import Plugins;" \
+        script = "from jobtronaut.author.plugins import Plugins;" \
                  "Plugins().task(\"{0}\")(\"{1}\").script()".format(classname, arguments)
         cmd = self._get_commandlist_with_resolved_executable(task)
         cmd.append(script)
