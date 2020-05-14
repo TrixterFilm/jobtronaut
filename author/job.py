@@ -87,12 +87,11 @@ class Job(author.Job):
         "job_attributes",
         "requires_arguments_cache",
         "task",
-        "append_instances",
         "_flat_hierarchy",
         "local"
     ]
 
-    def __init__(self, task, arguments={}, append_instances=False, local=None, **kwargs):
+    def __init__(self, task, arguments={}, append_instances=True, compact_hierarchy=True, local=None, **kwargs):
         """
 
         Args:
@@ -140,7 +139,6 @@ class Job(author.Job):
         self.arguments_file = os.path.join(ARGUMENTS_STORAGE_PATH, "{}.json".format(uuid.uuid4()))
         self.requires_arguments_cache = False
         self._prepare_attributes(self.job_attributes)
-        self.append_instances = append_instances
 
         if isinstance(task, str):
             _task_cls = Plugins().task(task)
@@ -154,6 +152,11 @@ class Job(author.Job):
             raise NotImplementedError("Only Task names and author.Tasks instances allowed.")
 
         self.task = _task
+
+        if compact_hierarchy:
+            self._compact_hierarchy()
+        if append_instances:
+            self._append_instances()
 
         self._flat_hierarchy = None
 
@@ -314,6 +317,51 @@ class Job(author.Job):
 
         return subtasks
 
+    def _compact_hierarchy(self, task=None):
+        if not task:
+            task = self
+
+        new_task = task
+        while new_task.subtasks:
+            if len(new_task.subtasks) == 1:
+                # we have to handle this in case the job has been processed
+                # before and is reused in a jobs_as_task situation
+                if isinstance(new_task.subtasks[0], author.Instance):
+                    break
+                new_task = new_task.subtasks[0]
+            elif len(new_task.subtasks) > 1:
+                for subtask in new_task.subtasks:
+                    self._compact_hierarchy(subtask)
+                break
+
+        if new_task is not task:
+            task.attributeByName["subtasks"].value = [new_task]
+            # If task is self we don't want to optimize that away.
+            # In case of an expanded task we don't have any possibility to
+            # change the existing parent to serial so we have to keep the
+            # intermediate "serial" task to handle the hierarchy
+            # correctly.
+            if task is not self and new_task.title in ("serial", "parallel"):
+                if new_task.title == "serial" or new_task.serial:
+                    task.serialsubtasks = 1
+                task.attributeByName["subtasks"].value = new_task.subtasks
+
+    def _append_instances(self, task=None, dependent_id=""):
+        if not task:
+            task = self.task
+
+        if task.__class__ == author.Instance:
+            return
+
+        if task.subtasks:
+            for idx, subtask in enumerate(task.subtasks):
+                self._append_instances(subtask, dependent_id)
+                if task.serialsubtasks:
+                    dependent_id = subtask.id
+        elif dependent_id:
+            instance = author.Instance(title=dependent_id)
+            task.addChild(instance)
+
     def _modify(self, predicate, attribute, value, scope):
         """ modifies task or command attributes if the predicate returns true
 
@@ -407,26 +455,9 @@ def jobs_to_task(jobs, parent_task=None, wait_for_task=None):
 
     for job_or_jobs in jobs:
         if isinstance(job_or_jobs, (tuple, list)):
-            last_task = jobs_to_task(job_or_jobs, parent_task=parent_task, wait_for_task=wait_for_task)
-            if parent_task.title == "serial":
-                wait_for_task = last_task
+            jobs_to_task(job_or_jobs, parent_task=parent_task)
         else:
-            # in case we use `append_instances=True` for dynamic expansions...
-            # ensure we properly reference the root task of the prior job and append the instance
-            # to all commandtasks that don't have any children
-            if job_or_jobs.append_instances and wait_for_task:
-                tasks = [_ for _ in job_or_jobs.flat_hierarchy["tasks"]
-                         if _.attributeByName.get("cmds")
-                         and not _.subtasks]
-                for task in tasks:
-                    instance = author.Instance(title=wait_for_task.id)
-                    task.addChild(instance)
-            # for some reason addChild() doesn't have an effect
             parent_task.subtasks.append(job_or_jobs.task)
-            if parent_task.title == "serial":
-                wait_for_task = job_or_jobs.task
-
-    return parent_task
 
 
 def _dump_arguments_cache(jobs, force=False):
