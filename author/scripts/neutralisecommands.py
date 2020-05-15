@@ -35,10 +35,11 @@ cleanly after a previous successful run.
 import logging
 import os
 
-import tractor.api.query as tractor_query
-
-from trixter.farmsubmit.query import initialize_engine
-from trixter.farmsubmit.constants import LOGGING_NAMESPACE
+from jobtronaut.query import (
+    initialize_engine,
+    tractor_query
+)
+from jobtronaut.constants import LOGGING_NAMESPACE
 
 LOG = logging.getLogger("{}.scripts".format(LOGGING_NAMESPACE))
 

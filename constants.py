@@ -24,7 +24,7 @@
 
 """ a collection of constants """
 
-
+import inspect
 import imp
 import logging
 import traceback
@@ -113,10 +113,15 @@ JOB_STORAGE_PATH_TEMPLATE = _get_configuration_value(
     )
 )
 
-TRACTOR_ENGINE_CREDENTIALS_RESOLVER = _get_configuration_value("TRACTOR_ENGINE_CREDENTIALS_RESOLVER")
-
-TRACTOR_ENGINE_USER_NAME = _get_configuration_value("TRACTOR_ENGINE_USER_NAME")
-TRACTOR_ENGINE_USER_PASSWORD = _get_configuration_value("TRACTOR_ENGINE_USER_PASSWORD")
+TRACTOR_ENGINE_CREDENTIALS_RESOLVER = _get_configuration_value(
+    "TRACTOR_ENGINE_CREDENTIALS_RESOLVER",
+    validator=(
+        lambda x: inspect.isfunction(x) and len(x()) == 2,
+        "TRACTOR_ENGINE_CREDENTIALS_RESOLVER must be a callable and "
+        "return a tuple/list with two string items in that form "
+        "('my_secret_user', 'my_secret_password')"
+    )
+)
 
 PLUGIN_PATH = _get_configuration_value(
     "PLUGIN_PATH",
@@ -135,7 +140,7 @@ ENABLE_PLUGIN_CACHE = _get_configuration_value(
 )
 
 EXECUTABLE_RESOLVER = _get_configuration_value(
-    "EXECUTABLE_RESOLVER"
+    "EXECUTABLE_RESOLVER",
 )
 
 ENVIRONMENT_RESOLVER = _get_configuration_value(

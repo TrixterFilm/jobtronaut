@@ -39,23 +39,13 @@ def initialize_engine():
         except tractor_query.PasswordRequired:
             return False
 
-    from ..constants import (
-        TRACTOR_ENGINE_CREDENTIALS_RESOLVER,
-        TRACTOR_ENGINE_USER_NAME,
-        TRACTOR_ENGINE_USER_PASSWORD
-    )
+    from ..constants import TRACTOR_ENGINE_CREDENTIALS_RESOLVER
 
     # check if a user and password is already set,
     # otherwise initialize with JENKINS account
     if not _do_test():
-        if TRACTOR_ENGINE_CREDENTIALS_RESOLVER():
-            tractor_query.setEngineClientParam(
-                user=TRACTOR_ENGINE_CREDENTIALS_RESOLVER()[0],
-                password=TRACTOR_ENGINE_CREDENTIALS_RESOLVER()[1]
-            )
-        else:
-            tractor_query.setEngineClientParam(
-                user=TRACTOR_ENGINE_USER_NAME,
-                password=TRACTOR_ENGINE_USER_PASSWORD
-            )
+        tractor_query.setEngineClientParam(
+            user=TRACTOR_ENGINE_CREDENTIALS_RESOLVER()[0],
+            password=TRACTOR_ENGINE_CREDENTIALS_RESOLVER()[1]
+        )
         assert _do_test(), "Unsuccessful login attempt."  # actually we shouldn't need this..

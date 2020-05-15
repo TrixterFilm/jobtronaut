@@ -50,11 +50,7 @@ JOB_STORAGE_PATH_TEMPLATE = ""
 
 # to keep the engine user credentials more secret a function callable can be defined
 # that would return the credentials tuple (username, password)
-TRACTOR_ENGINE_CREDENTIALS_RESOLVER = lambda: ("user", "password")
-# alternatively the engine user and password can be configured directly
-# those will be consumed only if no resolver was specified
-TRACTOR_ENGINE_USER_NAME = "unknown_user"
-TRACTOR_ENGINE_USER_PASSWORD = "unknown_user_password"
+TRACTOR_ENGINE_CREDENTIALS_RESOLVER = lambda: ("unknown_user", "unknown_password")
 
 # The searchpaths for any kind of plugins (tasks/processors)
 PLUGIN_PATH = []

@@ -86,12 +86,4 @@ Configuration
     * - TRACTOR_ENGINE_CREDENTIALS_RESOLVER
       - ``callable``
       -
-      - ``lambda: ("user", "password")``
-    * - TRACTOR_ENGINE_USER_NAME
-      - ``str``
-      -
-      - `unknown_user`
-    * - TRACTOR_ENGINE_PASSWORD
-      - ``str``
-      -
-      - `unknown_password`
+      - ``lambda: ("unknown_user", "unknown_password")``
