@@ -583,7 +583,28 @@ class Task(author.Task):
         """
         cmdlist = copy.deepcopy(cmdlist)
         if hasattr(self.arguments, COMMANDFLAGS_ARGUMENT_NAME):
-            cmdlist[1:1] = getattr(self.arguments, COMMANDFLAGS_ARGUMENT_NAME).processed.split(" ")
+            flags_value = getattr(self.arguments, COMMANDFLAGS_ARGUMENT_NAME).processed
+            if isinstance(flags_value, basestring):
+                cmdlist[1:1] = flags_value.split(" ")
+            elif isinstance(flags_value, dict):
+                cmdstring = " ".join(cmdlist)
+                for pattern, value in flags_value.items():
+                    if re.search(pattern, cmdstring):
+                        _LOG.debug(
+                            "Given pattern `{}` matches command `{}`. Flags `{}` will be injected.".format(
+                                pattern,
+                                cmdstring,
+                                value
+                            )
+                        )
+                        cmdlist[1:1] = value.split(" ")
+            else:
+                raise TypeError(
+                    "Unsupported type for argument `{}`. Expected basestring or dict, got `{}`".format(
+                        COMMANDFLAGS_ARGUMENT_NAME,
+                        type(flags_value)
+                    )
+                )
 
         return cmdlist
 
