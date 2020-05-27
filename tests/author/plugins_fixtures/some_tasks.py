@@ -23,8 +23,8 @@
 # ######################################################################################################################
 
 
-from trixter.farmsubmit.author import Task
-from trixter.farmsubmit.author import ProcessorDefinition
+from jobtronaut.author import Task
+from jobtronaut.author import ProcessorDefinition
 
 
 TASKS_DICT = {

@@ -25,7 +25,7 @@
 from mock import patch
 import os
 
-import jobtronaut.author.plugins
+from jobtronaut.author.plugins import Plugins
 
 from .. import TestCase
 from .plugins_fixtures import some_processors as processors
@@ -38,52 +38,52 @@ class TestPlugins(TestCase):
     @patch("jobtronaut.author.plugins.PLUGIN_PATH", new=[os.path.dirname(processors.__file__)])
     def setUp(cls):
         # let us use the fixtures path to test with
-        jobtronaut.author.plugins.Plugins().initialize()
+        Plugins().initialize()
         # in case all unittests are failing the initialize will not work, so check test_initialize
 
     def test_processors(self):
         """ check if available processors match the ones we provide """
         self.assertListEqual(
             sorted(processors.PROCESSORS_DICT.keys()),
-            sorted(jobtronaut.author.plugins.Plugins().processors)
+            sorted(Plugins().processors)
         )
 
     def test_tasks(self):
         """ check if available tasks match the ones we provide """
         self.assertListEqual(
             sorted(tasks.TASKS_DICT.keys()),
-            sorted(jobtronaut.author.plugins.Plugins().tasks)
+            sorted(Plugins().tasks)
         )
 
     def test_plugins(self):
         """ check if available plugins match the ones we provide """
         self.assertListEqual(
             sorted(tasks.TASKS_DICT.keys() + processors.PROCESSORS_DICT.keys()),
-            sorted(jobtronaut.author.plugins.Plugins().plugins)
+            sorted(Plugins().plugins)
         )
 
     def test_task(self):
         """ check if we get the task class we would expect """
         for task_name in tasks.TASKS_DICT:
             self.assertEqual(
-                jobtronaut.author.plugins.Plugins().task(task_name).__name__,
+                Plugins().task(task_name).__name__,
                 tasks.TASKS_DICT[task_name].__name__
             )
 
         with self.assertRaises(KeyError) as context:
-            jobtronaut.author.plugins.Plugins().task("NonExistingTask")
+            Plugins().task("NonExistingTask")
         self.assertIn("No task found for", context.exception.message)
 
     def test_processor(self):
         """ check if we get the processor class we would expect """
         for processor_name in processors.PROCESSORS_DICT:
             self.assertEqual(
-                jobtronaut.author.plugins.Plugins().processor(processor_name).__name__,
+                Plugins().processor(processor_name).__name__,
                 processors.PROCESSORS_DICT[processor_name].__name__
             )
 
         with self.assertRaises(KeyError) as context:
-            jobtronaut.author.plugins.Plugins().processor("NonExistingProcessor")
+            Plugins().processor("NonExistingProcessor")
 
         self.assertIn("No processor found for", context.exception.message)
 
@@ -94,27 +94,27 @@ class TestPlugins(TestCase):
 
         for plugin_name in plugins:
             self.assertEqual(
-                jobtronaut.author.plugins.Plugins().plugin(plugin_name).__name__,
+                Plugins().plugin(plugin_name).__name__,
                 plugins[plugin_name].__name__
             )
 
         with self.assertRaises(KeyError) as context:
-            jobtronaut.author.plugins.Plugins().plugin("NonExistingPlugin")
+            Plugins().plugin("NonExistingPlugin")
         self.assertIn("No plugin found for", context.exception.message)
 
     def test_plugin_class(self):
         for processor in processors.PROCESSORS_DICT.keys():
             self.assertEqual(
-                jobtronaut.author.plugins.Plugins().plugin_class(processor), "Processor"
+                Plugins().plugin_class(processor), "Processor"
             )
 
         for task in tasks.TASKS_DICT.keys():
             self.assertEqual(
-                jobtronaut.author.plugins.Plugins().plugin_class(task), "Task"
+                Plugins().plugin_class(task), "Task"
             )
 
         with self.assertRaises(AssertionError) as context:
-            jobtronaut.author.plugins.Plugins().plugin_class("NonExistingPlugin")
+            Plugins().plugin_class("NonExistingPlugin")
 
         self.assertIn("Plugin NonExistingPlugin could not", context.exception.message)
 
@@ -123,13 +123,13 @@ class TestPlugins(TestCase):
         with patch("jobtronaut.author.plugins.PLUGIN_PATH", new=[]):
             self.assertNotEqual(
                 [],
-                sorted(jobtronaut.author.plugins.Plugins().tasks)
+                sorted(Plugins().tasks)
             )
-            self.assertNotEqual([], sorted(jobtronaut.author.plugins.Plugins().processors))
+            self.assertNotEqual([], sorted(Plugins().processors))
 
-            jobtronaut.author.plugins.Plugins().initialize()
-            self.assertListEqual([], sorted(jobtronaut.author.plugins.Plugins().tasks))
-            self.assertListEqual([], sorted(jobtronaut.author.plugins.Plugins().processors))
+            Plugins().initialize()
+            self.assertListEqual([], sorted(Plugins().tasks))
+            self.assertListEqual([], sorted(Plugins().processors))
 
     def test_initialize_with_duplicates(self):
         """ check if the duplicates detection works as expected """
@@ -138,9 +138,9 @@ class TestPlugins(TestCase):
             os.path.dirname(processors.__file__), os.path.join(os.path.dirname(processors.__file__), "duplicates")]):
             # ensure that we raise an error if we find duplicates
             with self.assertRaises(AssertionError) as context:
-                jobtronaut.author.plugins.Plugins().initialize()
+                Plugins().initialize()
             self.assertIn("Please make sure Task and Processor names are unique", context.exception.message)
-            jobtronaut.author.plugins.Plugins().initialize(ignore_duplicates=True)
+            Plugins().initialize(ignore_duplicates=True)
 
     def test_get_all_arguments(self):
         """ check if we will get all arguments a task will consume correctly """
@@ -152,6 +152,6 @@ class TestPlugins(TestCase):
 
             expected_arguments = list(set(all_arguments))
             self.assertListEqual(
-                jobtronaut.author.plugins.Plugins().get_all_arguments(task_name),
+                Plugins().get_all_arguments(task_name),
                 list(set([_.split(".")[0] for _ in expected_arguments]))
             )
