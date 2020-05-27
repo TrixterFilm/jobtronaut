@@ -63,7 +63,7 @@ class Plugins(Singleton):
         """ Source all modules in searchpath that match names and extensions.
 
         Args:
-            searchpath (str): FARMSUBMIT_PLUGIN_PATH environment search path
+            searchpath (str): PLUGIN_PATH environment search path
             index (int): index that has to be unique to avoid name clashes
 
         Returns:
@@ -108,8 +108,8 @@ class Plugins(Singleton):
     def initialize(self, ignore_duplicates=False):
         """ Parse all the searchpaths and store the result.
 
-        This will (re-)initialize the Pugins singleton and (re-)load all plugins
-        (tasks, processors) that can be found in the FARMSUBMIT_PLUGIN_PATH.
+        This will (re-)initialize the Plugins singleton and (re-)load all plugins
+        (tasks, processors) that can be found in the PLUGIN_PATH.
         """
         if self.__tasks or self.__processors:
             self._clear()

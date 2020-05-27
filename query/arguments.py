@@ -38,7 +38,7 @@ _LOG = logging.getLogger("{}.query.arguments".format(LOGGING_NAMESPACE))
 def get_arguments_objects(task_id):
     """ Given a Tractor Task ID it will return a list of all used Arguments objects.
 
-    We expect that the matching Task uses a trixter.farmsubmit.Task.script() method.
+    We expect that the matching Task uses a jobtronaut.Task.script() method.
 
     Args:
         task_id (str): `:`separated id string, example: 1701362644: 15

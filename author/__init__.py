@@ -1,10 +1,3 @@
-""" Farmsubmit Authoring API
-
-The authoring package of the Unified Farmsubmission is meant to be imported
-from Job authors. It contains everything you need to author your own Jobs,
-Tasks and Processors. It IS the API.
-"""
-
 # ######################################################################################################################
 #  Copyright 2020 TRIXTER GmbH                                                                                         #
 #                                                                                                                      #

@@ -202,7 +202,7 @@ class BaseProcessor(object):
         """ resolves argument values and python expressions
 
         Args:
-            task (:obj: `farmsubmit.Task`):
+            task (:obj: `Task`):
             value (str): value that will get resolved
 
         Notes:
@@ -254,7 +254,7 @@ class BaseProcessor(object):
         """ resolve all `<arg: >` matches
 
         Args:
-            task (:obj: `farmsubmit.Task`): task instance that keeps the arguments that shall be resolved
+            task (:obj: `Task`): task instance that keeps the arguments that shall be resolved
             value (str): string value to resolve
 
         Returns:
