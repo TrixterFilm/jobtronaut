@@ -108,7 +108,7 @@ class Arguments(dict):
             _LOG.debug("Attribute '{0}' existing with value '{1}'".format(name, self[name]))
             initialize = False
 
-        if isinstance(value, ArgumentValue):
+        if hasattr(value, "initial") and hasattr(value, "processed"):
             self.__setattr__(name, ArgumentValue(value.initial, value.processed))
             self.__setitem__(name, ArgumentValue(value.initial, value.processed))
         else:
