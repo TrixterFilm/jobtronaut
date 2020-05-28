@@ -47,6 +47,10 @@ class FilePatternProcessor(BaseProcessor):
     matching the pattern. Returns a list of all files that have
     been found.
     """
+    parameters = {
+        "pattern": ".*",
+        "recursive": True
+    }
 
     @staticmethod
     def _find_files(root, pattern=r".*", recursive=True):
@@ -76,8 +80,8 @@ class FilePatternProcessor(BaseProcessor):
     def process(self, argument_name, argument_value, parameters):
         return self._find_files(
             argument_value,
-            parameters.get("pattern", ".*"),
-            parameters.get("recursive", True)
+            parameters.get("pattern", self.parameters["pattern"]),
+            parameters.get("recursive", self.parameters["recursive"])
         )
 
 
@@ -86,10 +90,14 @@ class ChunkProcessor(BaseProcessor):
     description = \
     """ Only keeps each Nth element from an input list
     """
+    parameters = {
+        "chunkhandles": [0, 0]
+    }
+
     @supported_schemas(ProcessorSchemas.FRAMERANGE)
     def process(self, argument_name, argument_value, parameters):
         chunksize = self.task.arguments.chunksize.processed
-        handles = parameters.get("chunkhandles", [0, 0])
+        handles = parameters.get("chunkhandles") or self.parameters["chunkhandles"]
         new_elements = []
         for i in xrange(argument_value[0], argument_value[1] + 1, chunksize):
             new_elements.append([i - handles[0], min(argument_value[1], i + chunksize - 1) + handles[1]])
@@ -98,7 +106,7 @@ class ChunkProcessor(BaseProcessor):
     @supported_schemas(ProcessorSchemas.FRAMERANGES)
     def process(self, argument_name, argument_value, parameters):
         chunksize = self.task.arguments.chunksize.processed
-        handles = parameters.get("chunkhandles", [0, 0])
+        handles = parameters.get("chunkhandles") or self.parameters["chunkhandles"]
         new_elements = []
         for _range in argument_value:
             for i in xrange(_range[0], _range[1] + 1, chunksize):
@@ -119,7 +127,7 @@ class ExpressionToElementsProcessor(BaseProcessor):
     Output:
     [1001, 1002, 1005, 1010, ...]
     """
-    # @todo Drop requirement for this to be [str] and support str instead
+
     @supported_schemas(str)
     def process(self, argument_name, argument_value, parameters):
         import re
@@ -143,6 +151,7 @@ class RangeToExpressionProcessor(BaseProcessor):
     'start-end'
     We assume that a range will always be ascending.
     """
+
     @supported_schemas(ProcessorSchemas.FRAMERANGE)
     def process(self, argument_name, argument_value, parameters):
         return "{0}-{1}".format(argument_value[0], argument_value[-1])
@@ -155,10 +164,14 @@ class ElementsToRangesProcessor(BaseProcessor):
     possible. The amount of resulting ranges depends on the continuity
     of the input elements.
     """
+    parameters = {
+        "sort": True
+    }
+
     # @todo implement chunksize into this processor
     @supported_schemas([int])
     def process(self, argument_name, argument_value, parameters):
-        if parameters.get("sort", True):
+        if parameters.get("sort", self.parameters["sort"]):
             argument_value.sort()
         previous_value = argument_value[0]
         del argument_value[0]
@@ -181,6 +194,7 @@ class ElementsToEnclosingRangeProcessor(BaseProcessor):
     """ Converts a list of elements into a single range, considering
     the lowest number as start and highest number as end of a range.
     """
+
     @supported_schemas(Schema([int]))
     def process(self, argument_name, argument_value, parameters):
         argument_value.sort()
@@ -191,16 +205,24 @@ class ValueFromKeyProcessor(BaseProcessor):
 
     description = \
     """ Extracts a value from a dictionary based on a given element as key. """
+
+    parameters = {
+        "default": None
+    }
+
     @supported_schemas(dict)
     def process(self, argument_name, argument_value, parameters):
-        default = parameters.get("default")
+        default = parameters.get("default", self.parameters["default"])
         return argument_value.get(parameters.get("key", ""), default)
 
 
 class RangesToElementsProcessor(BaseProcessor):
+
+    description = \
     """ Converts a list of ranges [start, end] into a list of all expanded
     ranges [start, ..., end]
     """
+
     @supported_schemas(ProcessorSchemas.FRAMERANGES)
     def process(self, argument_name, argument_value, parameters):
         frames = []
@@ -215,6 +237,7 @@ class RangeToElementsProcessor(BaseProcessor):
     """ Expands a single range [start, end] into a flat list of
     all elements [start, ..., end]
     """
+
     @supported_schemas(ProcessorSchemas.FRAMERANGE)
     def process(self, argument_name, argument_value, parameters):
         return range(argument_value[0], argument_value[1] + 1)
@@ -227,20 +250,29 @@ class InputToOutputProcessor(BaseProcessor):
 
     """
 
+    parameters = {
+        "prefix": "",
+        "input_name": "",
+        "suffix": "",
+        "extension":  ""
+    }
+
     @supported_schemas(str)
     def process(self, argument_name, argument_value, parameters):
         input_name, input_extension = os.path.splitext(os.path.basename(argument_value))
         prefix = parameters.get("prefix", "")
-        input_name = parameters.get("input_name") or input_name
-        suffix = parameters.get("suffix", "")
-        extension = parameters.get("extension", input_extension)
+        input_name = parameters.get("input_name", self.parameters["input_name"]) or input_name
+        suffix = parameters.get("suffix", self.parameters["suffix"])
+        extension = parameters.get("extension", self.parameters["extension"]) or input_extension
 
-        output = os.path.join(self.task.arguments.output_directory.processed, "{0}{1}{2}{3}".format(prefix,
-                                                                                                    input_name,
-                                                                                                    suffix,
-                                                                                                    extension
-                                                                                         )
-                              )
+        output = os.path.join(
+            self.task.arguments.output_directory.processed, "{0}{1}{2}{3}".format(
+                prefix,
+                input_name,
+                suffix,
+                extension
+            )
+        )
 
         return output
 
@@ -249,9 +281,14 @@ class CopyValueProcessor(BaseProcessor):
 
     description = \
     """ Copies a value """
+
+    parameters = {
+        "value": ""
+    }
+
     @supported_schemas(object)
     def process(self, argument_name, argument_value, parameters):
-        value = parameters.get("value") or argument_value
+        value = parameters.get("value", self.parameters["value"]) or argument_value
         return copy.deepcopy(value)
 
 
@@ -260,10 +297,15 @@ class SubstitutionProcessor(BaseProcessor):
     description = \
     """ Find an replace within a given input using a regex pattern """
 
+    parameters = {
+        "pattern": "",
+        "replacement": ""
+    }
+
     @supported_schemas(str)
     def process(self, argument_name, argument_value, parameters):
-        pattern = parameters.get("pattern", None)
-        replacement = parameters.get("replacement", "")
+        pattern = parameters.get("pattern", self.parameters["pattern"])
+        replacement = parameters.get("replacement", self.parameters["replacement"])
 
         if pattern:
             return re.sub(pattern, replacement, argument_value)
@@ -272,8 +314,8 @@ class SubstitutionProcessor(BaseProcessor):
 
     @supported_schemas([str])
     def process(self, argument_name, argument_value, parameters):
-        pattern = parameters.get("pattern", None)
-        replacement = parameters.get("replacement", "")
+        pattern = parameters.get("pattern", self.parameters["pattern"])
+        replacement = parameters.get("replacement", self.parameters["replacement"])
 
         if pattern:
             return [re.sub(pattern, replacement, _) for _ in argument_value]
@@ -309,10 +351,16 @@ class ElementsPreviewReorderProcessor(BaseProcessor):
     framerange in Nuke. The user can additionally define how many frames from the sequence
     he wants for a preview. We will split the sequence accordingly.
     """
+
+    parameters = {
+        "stride": 0,
+        "discard_rest": False
+    }
+
     @supported_schemas(Schema(And([int], lambda x: len(x) > 1)))
     def process(self, argument_name, argument_value, parameters):
-        stride = parameters.get("stride", len(argument_value))
-        discard_rest = parameters.get("discard_rest", False)
+        stride = parameters.get("stride", self.parameters["stride"]) or len(argument_value)
+        discard_rest = parameters.get("discard_rest", self.parameters["discard_rest"])
 
         indices = [0, len(argument_value)-1] + range(stride, len(argument_value)-2, stride)
         reordered = [argument_value[idx] for idx in indices]
@@ -340,22 +388,19 @@ class LambdaProcessor(BaseProcessor):
 
     Expects a lambda expression as the 'predicate' parameter.
     """
+
+    parameters = {
+        "required_modules": {},
+        "predicate": lambda value, modules, arguments: value
+    }
+
     @supported_schemas(object)
     def process(self, argument_name, argument_value, parameters):
-        required_modules = parameters.get("required_modules", None)
-        predicate = parameters.get("predicate", lambda value, modules, arguments: value)
+        required_modules = parameters.get("required_modules", self.parameters["required_modules"])
+        predicate = parameters.get("predicate", self.parameters["predicate"])
 
         modules = {}
         for name, module in required_modules.items():
            modules[name] = getattr(__import__(module, globals(), locals(), [name], -1), name)
+
         return predicate(argument_value, modules, self.task.arguments)
-
-
-class SkipExistingFramesProcessor(BaseProcessor):
-
-    description = \
-    """ Inspects the filesystem and removes already existing elements from the
-    respective elements_id argument.
-    """
-    def __init__(self):
-        raise NotImplementedError

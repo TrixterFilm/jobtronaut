@@ -169,6 +169,7 @@ class BaseProcessor(object):
     """
     __metaclass__ = Overload
     description = "No description has been set."
+    parameters = {}
 
     def __init__(self):
         self.task = None
