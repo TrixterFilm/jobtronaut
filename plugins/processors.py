@@ -43,7 +43,8 @@ _LOG = logging.getLogger("{}.processor".format(LOGGING_NAMESPACE))
 class FilePatternProcessor(BaseProcessor):
 
     description = \
-    """ Given an input directory it parses the filesystem for all files
+    """ 
+    Given an input directory it parses the filesystem for all files
     matching the pattern. Returns a list of all files that have
     been found.
     """
@@ -88,7 +89,8 @@ class FilePatternProcessor(BaseProcessor):
 class ChunkProcessor(BaseProcessor):
 
     description = \
-    """ Only keeps each Nth element from an input list
+    """ 
+    Only keeps each Nth element from an input list
     """
     parameters = {
         "chunkhandles": [0, 0]
@@ -117,7 +119,8 @@ class ChunkProcessor(BaseProcessor):
 class ExpressionToElementsProcessor(BaseProcessor):
 
     description = \
-    """ converts a frame expression into a list of individual frames
+    """ 
+    Converts a frame expression into a list of individual frames
 
     The following expression are all considered valid
     1001-1002,1005,1010-1100
@@ -160,7 +163,8 @@ class RangeToExpressionProcessor(BaseProcessor):
 class ElementsToRangesProcessor(BaseProcessor):
 
     description = \
-    """ Converts a list of individual elements into as few ranges as
+    """ 
+    Converts a list of individual elements into as few ranges as 
     possible. The amount of resulting ranges depends on the continuity
     of the input elements.
     """
@@ -191,7 +195,8 @@ class ElementsToRangesProcessor(BaseProcessor):
 class ElementsToEnclosingRangeProcessor(BaseProcessor):
 
     description = \
-    """ Converts a list of elements into a single range, considering
+    """ 
+    Converts a list of elements into a single range, considering
     the lowest number as start and highest number as end of a range.
     """
 
@@ -219,7 +224,8 @@ class ValueFromKeyProcessor(BaseProcessor):
 class RangesToElementsProcessor(BaseProcessor):
 
     description = \
-    """ Converts a list of ranges [start, end] into a list of all expanded
+    """ 
+    Converts a list of ranges [start, end] into a list of all expanded
     ranges [start, ..., end]
     """
 
@@ -234,7 +240,8 @@ class RangesToElementsProcessor(BaseProcessor):
 class RangeToElementsProcessor(BaseProcessor):
 
     description = \
-    """ Expands a single range [start, end] into a flat list of
+    """ 
+    Expands a single range [start, end] into a flat list of
     all elements [start, ..., end]
     """
 
@@ -246,8 +253,8 @@ class RangeToElementsProcessor(BaseProcessor):
 class InputToOutputProcessor(BaseProcessor):
 
     description = \
-    """ Generates a new input based on a given output directory
-
+    """
+    Generates a new input based on a given output directory
     """
 
     parameters = {
@@ -280,7 +287,9 @@ class InputToOutputProcessor(BaseProcessor):
 class CopyValueProcessor(BaseProcessor):
 
     description = \
-    """ Copies a value """
+    """
+    Copies a value
+    """
 
     parameters = {
         "value": ""
@@ -295,7 +304,9 @@ class CopyValueProcessor(BaseProcessor):
 class SubstitutionProcessor(BaseProcessor):
 
     description = \
-    """ Find an replace within a given input using a regex pattern """
+    """
+    Find an replace within a given input using a regex pattern
+    """
 
     parameters = {
         "pattern": "",
@@ -326,7 +337,9 @@ class SubstitutionProcessor(BaseProcessor):
 class Base64EncodeProcessor(BaseProcessor):
 
     description = \
-    """ Encodes to urlsafe base64 string. """
+    """
+    Encodes to urlsafe base64 string.
+    """
 
     @supported_schemas(str)
     def process(self, argument_name, argument_value, parameters):
@@ -336,7 +349,9 @@ class Base64EncodeProcessor(BaseProcessor):
 class Base64DecodeProcessor(BaseProcessor):
 
     description = \
-    """ Decodes from an urlsafe base64 string. """
+    """
+    Decodes from an urlsafe base64 string.
+    """
 
     @supported_schemas(str)
     def process(self, argument_name, argument_value, parameters):
@@ -346,7 +361,8 @@ class Base64DecodeProcessor(BaseProcessor):
 class ElementsPreviewReorderProcessor(BaseProcessor):
 
     description = \
-    """ Will reorder the input elements to provide a sensible order for preview purposes.
+    """
+    Will reorder the input elements to provide a sensible order for preview purposes. 
     We assume we always want the first and last frames rendered first to establish a valid
     framerange in Nuke. The user can additionally define how many frames from the sequence
     he wants for a preview. We will split the sequence accordingly.
@@ -381,7 +397,8 @@ class ElementsPreviewReorderProcessor(BaseProcessor):
 class LambdaProcessor(BaseProcessor):
 
     description = \
-    """ Enables arbitrary argument processing from within a Task.
+    """
+    Enables arbitrary argument processing from within a Task.
 
     This is useful for very specific processors that do not have a generic
     usecase.

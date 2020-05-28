@@ -325,12 +325,24 @@ class BaseProcessor(object):
         Arguments:
             cls (class): The class which should be formatted
         """
+
         if short:
             infostr = "{BOLD}{BG_PURPLE}{FG_WHITE}" + cls.__name__ + "{END}"
         else:
             infostr = "\n{BOLD}{BG_PURPLE}{FG_WHITE}\n" + cls.__name__ + "\n{END}\n\n"
             infostr += "{BOLD}Description:" + "{END}\n"
             infostr += cls.description + "{END}\n\n"
+            infostr += "{BOLD}Parameters:" + "{END}\n\n"
+            for parameter, parameter_default in cls.parameters.items():
+                parameter_default_type = type(parameter_default)
+                if isinstance(parameter_default, basestring):
+                    parameter_default = "\"{}\"".format(parameter_default)
+                if parameter_default_type == dict:
+                    parameter_default = "{" + str(parameter_default) + "}"
+
+                infostr += "{BOLD} " + parameter + " {END}" + " (default [{}]: {})".format(
+                    parameter_default_type, parameter_default
+                ) + "{END}\n"
 
         return infostr.format(**BASH_STYLES)
 
