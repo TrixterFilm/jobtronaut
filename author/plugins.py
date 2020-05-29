@@ -30,6 +30,8 @@ import inspect
 import difflib
 import imp
 
+from collections import defaultdict
+
 from ..constants import (
     LOGGING_NAMESPACE,
     PLUGIN_PATH,
@@ -57,6 +59,7 @@ class Plugins(Singleton):
             self.__tasks = dict()
             self.__processors = dict()
             self.__not_loaded = dict()
+            self.__module_paths_map = defaultdict(list)
             self.initialize()
 
     def _source_modules(self, searchpath, index):
@@ -129,16 +132,20 @@ class Plugins(Singleton):
                                              .format(name))
                                 continue
                             else:
-                                raise AssertionError("Plugin \"{0}\" has been found multiple times. Please make sure "
-                                                     "Task and Processor names are unique.".format(name))
+                                raise AssertionError(
+                                    "Plugin \"{0}\" has been found multiple times. Please make sure "
+                                    "Task and Processor names are unique.".format(name)
+                                )
                         if hasattr(_module, "Task") \
                                 and issubclass(obj, _module.Task) \
                                 and not obj.__name__ == "Task":  # exclude the basetask
                             self.__tasks[name] = obj
+                            self.__module_paths_map[_module.__file__].append(obj)
                         elif hasattr(_module, "BaseProcessor") \
                                 and issubclass(obj, _module.BaseProcessor) \
                                 and not obj.__name__ == "BaseProcessor":
                             self.__processors[name] = obj
+                            self.__module_paths_map[_module.__file__].append(obj)
 
     def _clear(self):
         """ Initializes the tasks and processors to an empty dict.
@@ -146,6 +153,7 @@ class Plugins(Singleton):
         """
         self.__tasks = dict()
         self.__processors = dict()
+        self.__module_paths_map = defaultdict(list)
 
     @property
     def tasks(self):
@@ -281,6 +289,21 @@ class Plugins(Singleton):
                     arguments.append(arg.split(".")[0])
 
         return list(set(arguments))
+
+    def get_module_path(self, plugin_name):
+        """ Gets the module path from where the given plugin was sourced from
+
+        Args:
+            plugin_name (str): name of the Processor or Task plugin
+
+        Returns:
+            str: path to the compiled module
+
+        """
+        plugin = self.plugin(plugin_name)
+        for path, plugins in self.__module_paths_map.items():
+            if plugin in plugins:
+                return path
 
     @staticmethod
     def _flatten_nested_iterable(iterable, flat=None):

@@ -155,3 +155,12 @@ class TestPlugins(TestCase):
                 Plugins().get_all_arguments(task_name),
                 list(set([_.split(".")[0] for _ in expected_arguments]))
             )
+
+    def test_get_module_path(self):
+        """ check if we properly get the module path from where the plugin was sourced """
+
+        for task_name in tasks.TASKS_DICT.keys():
+            self.assertEqual(tasks.__file__, Plugins().get_module_path(task_name))
+
+        for processor_name in processors.PROCESSORS_DICT.keys():
+            self.assertEqual(processors.__file__, Plugins().get_module_path(processor_name))
