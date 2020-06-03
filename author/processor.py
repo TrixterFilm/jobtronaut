@@ -35,7 +35,7 @@ import os
 from schema import Schema, SchemaError, And, Or, Use
 import uuid
 
-from argument import (
+from .argument import (
     Arguments,
     ArgumentValue
 )
@@ -43,6 +43,7 @@ from ..constants import (
     BASH_STYLES,
     LOGGING_NAMESPACE
 )
+from .plugins import Plugins
 
 _LOG = logging.getLogger("{}.processor".format(LOGGING_NAMESPACE))
 _ProcessorDefinition = namedtuple("Processor", ["name", "scope", "parameters"])
@@ -343,6 +344,13 @@ class BaseProcessor(object):
                 infostr += "{BOLD} " + parameter + " {END}" + " (default [{}]: {})".format(
                     parameter_default_type, parameter_default
                 ) + "{END}\n"
+
+            infostr += "\n"
+
+            infostr += "{BOLD}Module Path:" + "{END}\n"
+            infostr += Plugins().get_module_path(cls.__name__) + "{END}\n\n"
+
+            infostr += "\n"
 
         return infostr.format(**BASH_STYLES)
 

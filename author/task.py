@@ -663,6 +663,9 @@ class Task(author.Task):
                     infostr += str(processor).replace("{", "{{").replace("}", "}}") + "\n"
                 infostr += "\n"
 
+            infostr += "{BOLD}Module Path:" + "{END}\n"
+            infostr += Plugins().get_module_path(cls.__name__) + "{END}\n\n"
+
             infostr += "\n"
 
         return infostr.format(**BASH_STYLES)
