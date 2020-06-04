@@ -145,10 +145,10 @@ def submit(args):
 def list_(args):
     plugins = Plugins()
     if args.type in ["all", "tasks"]:
-        for _ in plugins.tasks:
+        for _ in sorted(plugins.tasks):
             print(plugins.task(_).info())
     if args.type in ["all", "processors"]:
-        for _ in plugins.processors:
+        for _ in sorted(plugins.processors):
             print(plugins.processor(_).info())
 
 
