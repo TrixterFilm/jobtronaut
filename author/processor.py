@@ -336,11 +336,7 @@ class BaseProcessor(object):
             infostr += "{BOLD}Parameters:" + "{END}\n\n"
             for parameter, parameter_default in cls.parameters.items():
                 parameter_default_type = type(parameter_default)
-                if isinstance(parameter_default, basestring):
-                    parameter_default = "\"{}\"".format(parameter_default)
-                if parameter_default_type == dict:
-                    parameter_default = "{" + str(parameter_default) + "}"
-
+                parameter_default = Plugins.format_safe(parameter_default)
                 infostr += "{BOLD} " + parameter + " {END}" + " (default [{}]: {})".format(
                     parameter_default_type, parameter_default
                 ) + "{END}\n"

@@ -110,6 +110,8 @@ def parse_args():
     list_parser = subparsers.add_parser("list", help="Can list all known plugins.")
     list_parser.add_argument("type", default="all", choices=["all", "tasks", "processors"],
                              help="Define which plugins you want to list.")
+    list_parser.add_argument("--info", action="store_const", const=True, default=False,
+                               help="Show the detailed information for every plugin.")
     list_parser.set_defaults(func=list_)
 
     info_parser = subparsers.add_parser("info", help="Get more info on a specific plugin.")
@@ -146,10 +148,10 @@ def list_(args):
     plugins = Plugins()
     if args.type in ["all", "tasks"]:
         for _ in sorted(plugins.tasks):
-            print(plugins.task(_).info())
+            print(plugins.task(_).info(short=not(args.info)))
     if args.type in ["all", "processors"]:
         for _ in sorted(plugins.processors):
-            print(plugins.processor(_).info())
+            print(plugins.processor(_).info(short=not(args.info)))
 
 
 def info(args):

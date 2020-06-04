@@ -155,6 +155,16 @@ class Plugins(Singleton):
         self.__processors = dict()
         self.__module_paths_map = defaultdict(list)
 
+    # this is just a static helper we make use of in plugin.info(short=False)
+    @staticmethod
+    def format_safe(value):
+        if isinstance(value, basestring):
+            return "\"{}\"".format(value)
+        elif value is None:
+            return "None"
+        else:
+            return str(value).replace("{", "{{").replace("}", "}}")
+
     @property
     def tasks(self):
         """ Holds the available tasks.

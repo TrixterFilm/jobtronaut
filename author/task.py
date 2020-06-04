@@ -649,8 +649,12 @@ class Task(author.Task):
 
             if cls.argument_defaults:
                 infostr += "{BOLD}{FG_WHITE}Argument Defaults:" + "{END}\n"
-                for key, value in cls.argument_defaults.iteritems():
-                    infostr += key + ": " + str(value) + "\n"
+                for argument_name, default in cls.argument_defaults.items():
+                    default_type = type(default)
+                    default = Plugins.format_safe(default)
+                    infostr += "{BOLD} " + argument_name + " {END}" + " (default [{}]: {})".format(
+                        default_type, default
+                    ) + "{END}\n"
                 infostr += "\n"
 
             if cls.required_tasks:
@@ -660,7 +664,7 @@ class Task(author.Task):
             if cls.argument_processors:
                 infostr += "{BOLD}{FG_WHITE}Processors:" + "{END}\n"
                 for processor in cls.argument_processors:
-                    infostr += str(processor).replace("{", "{{").replace("}", "}}") + "\n"
+                    infostr += Plugins.format_safe(processor) + "\n"
                 infostr += "\n"
 
             infostr += "{BOLD}Module Path:" + "{END}\n"
