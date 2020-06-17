@@ -27,7 +27,8 @@ Usage
 
     >> jobtronaut submit -h
     usage: -c submit [-h] [--paused] --task TASK [--title TITLE]
-                     [--service SERVICE] [--afterjids JIDS] [--priority PRIORITY]
+                     [--comment COMMENT] [--service SERVICE]
+                     [--afterjids JIDS] [--priority PRIORITY]
                      [--tags TAGS [TAGS ...]] [--projects PROJECTS [PROJECTS ...]]
                      [--args ARGNAME:ARGVALUE [ARGNAME:ARGVALUE ...]]
                      [--env ENVVAR:ENVVALUE [ENVVAR:ENVVALUE ...]]
@@ -39,6 +40,7 @@ Usage
                             to run on the spoolhost.
       --task TASK           Set the root task for the job.
       --title TITLE         Set a custom job title.
+      --comment COMMENT     Set a job comment.
       --service SERVICE     Specify a hostmask to limit the blades this job can
                             run on.
       --afterjids JIDS      Only start the job when the jobs with these ids are

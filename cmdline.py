@@ -90,6 +90,8 @@ def parse_args():
                                help="Set the root task for the job.")
     submit_parser.add_argument("--title", type=str, default="",
                                help="Set a custom job title.")
+    submit_parser.add_argument("--comment", type=str, default="",
+                               help="Set a job comment.")
     submit_parser.add_argument("--service", "--hostmask", dest="service", type=str, default="",
                                help="Specify a hostmask to limit the blades this job can run on.")
     submit_parser.add_argument("--afterjids", dest="jids", type=str,
@@ -131,6 +133,7 @@ def submit(args):
     try:
         jid = Job(args.task, arguments=args.arguments, local=args.local).submit(
             title=args.title or args.task,
+            comment=args.comment,
             service=args.service,
             paused=args.paused,
             tags=args.tags,
