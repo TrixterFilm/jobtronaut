@@ -6,6 +6,9 @@
 Welcome to Jobtronaut's documentation!
 ======================================
 
+Jobtronaut is an extension of the `Tractor API <https://rmanwiki.pixar.com/display/TRA/Job+Author+Python+API>`_
+for authoring extensive and reusable task hierarchies in a flexible fashion.
+
 Contents:
 
 .. toctree::
