@@ -4,8 +4,6 @@ Configuration
 To make **Jobtronaut** fit into your environment nicely you can define your own configuation. This is supposed to be a
 python file and its full filepath need to be made available via the `JOBTRONAUT_PLUGIN_PATH` env var.
 
-The following variables can be overwritten.
-
 
 .. list-table:: You can define the following variables within your configuration file to make Jobtronaut fit into your Pipeline.
     :widths: 10 5 50 50
