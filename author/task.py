@@ -675,7 +675,7 @@ class Task(author.Task):
         return infostr.format(**BASH_STYLES)
 
     @staticmethod
-    def __EXPAND__(root_task_name, arguments_mapping, local=None):  # don't remove the arguments_mapping parameter!
+    def __EXPAND__(root_task, arguments_mapping, local=None):  # don't remove the arguments_mapping parameter!
         """ handles a task expansion
 
         The given rootask defines the relation between subtasks.
@@ -683,7 +683,8 @@ class Task(author.Task):
         which will not be inherited by the global arguments state.
 
         Args:
-            root_task_name (str): the name of the root task that defines the downstream hierarchy of subtasks
+            root_task (str or TaskWithOverrides): the name of the root task or a TaskWithOverrides
+                that defines the downstream hierarchy of subtasks
             arguments_mapping (dict): a mapping of the arguments <-> subtask relation. A valid entry mus exist
                 for EVERY task that exists in root_task.required_tasks.
             local (bool): the local state of new commands that will be created; check the Job docs for more information
@@ -691,9 +692,12 @@ class Task(author.Task):
         Returns:
 
         """
-        root_task = Plugins().task(root_task_name)
+        if isinstance(root_task, TaskWithOverrides):
+            _root_task = root_task.get()
+        else:
+            _root_task = Plugins().task(root_task)
 
-        assert root_task.required_tasks, \
+        assert _root_task.required_tasks, \
             "Expected the `required_tasks` attribute to define subtasks, but nothing was defined"
 
         _tmp_directory = tempfile.gettempdir()
@@ -707,7 +711,7 @@ class Task(author.Task):
                     re.sub(
                         r"['\"]{1}\w+['\"]{1}",
                         "Job(\g<0>, arguments_mapping[\g<0>], local={})".format(local),
-                        "{}".format(root_task.required_tasks)
+                        "{}".format(_root_task.required_tasks)
                     )
                 )
             )
