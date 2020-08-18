@@ -201,9 +201,10 @@ class TestTask(TestCase):
             # although this is how it currently should look it is not correct
             # we expect API changes and have to adjust the testMethod
             self.assertEqual(
-                ["/bin/echo",
-                 "test",
-                 "from jobtronaut.author.plugins import Plugins;Plugins().task(\"TaskFixture\")(\"AAAAA\").script()"
+                [
+                    "/bin/echo",
+                    "test",
+                    "from jobtronaut.author.plugins import Plugins;task=Plugins().task(\"TaskFixture\")(\"AAAAA\");task.script()"
                  ],
                  self._task._get_commandlist_with_script_call(_task)
             )
@@ -211,12 +212,24 @@ class TestTask(TestCase):
         # check filedump when we hit the characters limit for the serialized objects
         with patch.object(self._task.arguments, "serialized", return_value=SERIALIZED_ARGUMENTS_EXEEDED_LIMIT):
             self.assertEqual(
-                ["/bin/echo",
-                 "test",
-                 "from jobtronaut.author.plugins import Plugins;Plugins().task(\"TaskFixture\")(\"/temp/foobar/attributes.json:12\").script()"
+                [
+                    "/bin/echo",
+                    "test",
+                    "from jobtronaut.author.plugins import Plugins;task=Plugins().task(\"TaskFixture\")(\"/temp/foobar/attributes.json:12\");task.script()"
                  ],
                 self._task._get_commandlist_with_script_call(_task)
             )
+
+        with patch.object(self._task.arguments, "serialized", return_value="AAAAA"):
+            with patch.object(_task, "flags", create=True, new=Task.Flags.NO_RETRY):
+                self.assertEqual(
+                    [
+                        "/bin/echo",
+                        "test",
+                        "from jobtronaut.author.plugins import Plugins;task=Plugins().task(\"TaskFixture\")(\"AAAAA\");task.script();task.neutralize_commands()"
+                     ],
+                    self._task._get_commandlist_with_script_call(_task)
+                )
 
     @patch.object(TaskFixture, "cmd", create=True, new=lambda x: ["/some/executable", "test"])
     @patch("jobtronaut.author.task.EXECUTABLE_RESOLVER", new=lambda x: "/bin/echo")
@@ -252,25 +265,6 @@ class TestTask(TestCase):
         self.assertEqual("Cmd", cmds.value[0].attributeByName["constant"].value)  # currently expect all RemoteCmd
         self.assertEqual("some service,another service", cmds.value[0].service)
         self.assertEqual(["some tag", "another tag"], cmds.value[0].tags)
-
-    @patch.object(TaskFixture, "cmd", create=True, new=lambda x: ["/some/executable", "test"])
-    @patch("jobtronaut.author.task.EXECUTABLE_RESOLVER", new=lambda x: "/bin/echo")
-    @patch.object(TaskFixture, "no_retry", new_callable=PropertyMock, return_value=True)
-    def test_add_command_with_no_retry_flag(self, mock_no_retry):
-        """ check if we get the proper extra command for "command neutralisation" when no_retry is set """
-        script_name = "neutralisecommands.py"
-
-        _task = TaskFixture(TASK_FIXTURE_ARGUMENTS)
-        self._task._add_command(_task)
-        self.assertEqual(2, len(_task.attributeByName["cmds"].value))
-
-        self.assertListEqual(
-            [
-                ["/bin/echo", "test"],
-                ["/bin/echo", os.path.join(scripts.__path__[0], script_name)]
-            ],
-            [_.attributeByName["argv"].value for _ in _task.attributeByName["cmds"].value]
-        )
 
     @patch("jobtronaut.author.plugins.PLUGIN_PATH", new=[os.path.dirname(tasks.__file__)])
     @patch.object(TaskFixture, "per_element", new_callable=PropertyMock, return_value=False)
