@@ -577,7 +577,7 @@ class Task(author.Task):
         job_id = os.getenv("TR_ENV_JID")
         task_id = os.getenv("TR_ENV_TID")
 
-        if not job_id and task_id:
+        if not (job_id and task_id):
             _LOG.error("Unable to neutralize commands, because we can't identify the current job and/or task id.")
             return
 
