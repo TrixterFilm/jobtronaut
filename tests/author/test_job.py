@@ -35,6 +35,7 @@ from .. import TestCase
 
 from jobtronaut.author import Job
 from jobtronaut.author.job import _dump_arguments_cache
+from jobtronaut.author.plugins import Plugins
 
 
 from .plugins_fixtures import some_tasks as tasks
@@ -150,3 +151,28 @@ class TestJob(TestCase):
         for job in all_jobs:
             self.assertPathExists(job.arguments_file)
             os.remove(job.arguments_file)
+
+    def test_stop_traversal(self):
+        """ check if stop_traversal will prevent task creation """
+        root_task, arguments = tasks.TASKS_DICT.keys()[0], {"uno": [1, 2, 3], "dos": 2, "tres": 3}
+
+        for task in Plugins().tasks.values():
+            task.cmd = lambda x: ["/bin/echo", "Hello World"]
+            task.flags = tasks.Task.Flags.PER_ELEMENT
+
+        job = Job(root_task, arguments)
+        self.assertEqual(len(job.flat_hierarchy["tasks"]), 4)
+
+        for task in Plugins().tasks.values():
+            task.stop_traversal = lambda x: x.arguments.uno.processed == 2
+
+        job = Job(root_task, arguments)
+        self.assertEqual(len(job.flat_hierarchy["tasks"]), 3)
+        self.assertTrue("Elements 2" not in " ".join([_.title for _ in job.flat_hierarchy["tasks"]]))
+
+        for task in Plugins().tasks.values():
+            task.stop_traversal = lambda x: x.arguments.uno.processed in [1, 2, 3]
+
+        job = Job(root_task, arguments)
+        self.assertEqual(len(job.flat_hierarchy["tasks"]), 1)
+        self.assertTrue("Elements" not in " ".join([_.title for _ in job.flat_hierarchy["tasks"]]))
