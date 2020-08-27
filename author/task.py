@@ -188,6 +188,11 @@ class Task(author.Task):
         self.serialsubtasks = self.serial
         # add all subtasks to our "null" task (self)
         # the function has to handle the specific subtask addition based on the tasks properties
+
+        # first intercept to catch potential stop conditions early
+        if self.stop_traversal():
+            return
+
         if self.is_handle_task and self._has_cmd(self.__class__):
             _LOG.debug("Handletask {}. Adding simple dependency...".format(self))
             self._add_command_tasks(*args, **kwargs)
@@ -244,6 +249,12 @@ class Task(author.Task):
         command = Command(**kw)
         self.addCommand(command)
         return command
+
+    def stop_traversal(self):
+        """Decide whether we want to add *this* task as well as all child tasks
+        to the hierarchy.
+        """
+        return False
 
     @staticmethod
     def _has_cmd(cls):
@@ -337,6 +348,13 @@ class Task(author.Task):
             for element in self.elements.processed:
                 _task = cls(self.arguments, is_handle_task=False, *args, **kwargs)
                 _task.arguments.set(self.elements_id, ArgumentValue(_task.elements.initial, element))
+
+                # second intercept to prevent the addition of per element command tasks
+                # this is important to check against iterable attributes that are
+                # unwrapped in this for loop [1, 2, 3] --> Task1, Task2, Task3
+                if _task.stop_traversal():
+                    continue
+
                 self._append_elements_to_title(_task)
                 self._add_command(_task)
                 self._add_view(_task)
