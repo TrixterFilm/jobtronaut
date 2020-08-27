@@ -101,13 +101,14 @@ class Task(author.Task):
 
     """
     # additional members we have to add for the tractor assertions
-    MEMBERS = author.Task.MEMBERS + ["arguments",
-                                     "arguments_defaults",
-                                     "elements_id",
-                                     "is_handle_task",
-                                     "required_arguments",
-                                     "wait_for_task"
-                                     ]
+    MEMBERS = author.Task.MEMBERS + [
+        "arguments",
+        "arguments_defaults",
+        "elements_id",
+        "is_handle_task",
+        "required_arguments",
+        "wait_for_task"
+    ]
 
     description = "No description has been set."
 
@@ -497,19 +498,6 @@ class Task(author.Task):
             )
             _LOG.debug(_cmd_str.format(" ".join(cmd), task))
 
-            if task.no_retry:
-                # ensure we will add another command that will defuse previous commands
-                # as soon as this command is able to run (which means previous commands
-                # exited successfully)
-                task.newCommand(
-                    argv=[
-                        self._get_executable("python-pipe"),
-                        os.path.join(scripts.__path__[0], "neutralisecommands.py")
-                    ],
-                    service="linux64",  # looks like we need to set a service explicitly?!?
-                    local=local
-                )
-
     def _get_commandlist_with_resolved_executable(self, task):
         """ replaces the first item command list with the proper executable
 
@@ -562,11 +550,44 @@ class Task(author.Task):
             classname = re.sub(r"Overriden$", "", self.__class__.__name__)
         else:
             classname = self.__class__.__name__
+
         script = "from jobtronaut.author.plugins import Plugins;" \
-                 "Plugins().task(\"{0}\")(\"{1}\").script()".format(classname, arguments)
+                 "task=Plugins().task(\"{0}\")(\"{1}\");task.script()".format(classname, arguments)
+
+        script = script + ";task.neutralize_commands()" if task.no_retry else script
+
         cmd = self._get_commandlist_with_resolved_executable(task)
         cmd.append(script)
+
         return cmd
+
+    @staticmethod
+    def neutralize_commands():
+        """ neutralize all commands of the current task
+
+        """
+        from jobtronaut.query import (
+            initialize_engine,
+            tractor_query
+        )
+        initialize_engine()
+
+        # if a command runs he normally has access to the `TR_ENV_* vars,
+        # so we know where we want to neutralise all commands
+        job_id = os.getenv("TR_ENV_JID")
+        task_id = os.getenv("TR_ENV_TID")
+
+        if not (job_id and task_id):
+            _LOG.error("Unable to neutralize commands, because we can't identify the current job and/or task id.")
+            return
+
+        _LOG.info("Previous commands exited successfully. We are neutralising them!")
+
+        for command in tractor_query.commands("jid='{}' and tid='{}'".format(job_id, task_id)):
+            # we don't want to lose the original command, so let us know what that was
+            # but only echo it instead of letting it execute again
+            new_argv = ["/bin/echo", "Command has been neutralised:", "{}".format(" ".join(command["argv"]))]
+            tractor_query.cattr(command, key="argv", value=new_argv)
 
     def _get_commandlist_with_additional_command_flags(self, cmdlist):
         """ get a modified cmdlist of a commandtask and inserts additional commandflags
