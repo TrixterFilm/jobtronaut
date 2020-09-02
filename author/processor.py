@@ -220,7 +220,40 @@ class BaseProcessor(object):
             am argument value or python expression holds, otherwise it will be the unresolved string
 
         """
-        return self._resolve_expression(self._resolve_arguments(task, value))
+        _base_exception_msg = "Unable to resolve expression in processor `{}` on task `{}`: "
+
+        try:
+            result = self._resolve_arguments(task, value)
+        except:
+            _LOG.critical(
+                (
+                    _base_exception_msg +
+                    "\nKnown Attributes are: {}"
+                ).format(
+                        self.__class__.__name__,
+                        task.__class__.__name__,
+                        [_ for _ in task.arguments.keys() if _ != "elements_id"]
+                ), exc_info=True)
+            raise
+
+        try:
+            result = self._resolve_expression(result)
+        except:
+            _LOG.critical(
+                (
+                    _base_exception_msg +
+                    "\nIt properly resolved any argument value in '{}' to '{}' though.."
+                ).format(
+                    self.__class__.__name__,
+                    task.__class__.__name__,
+                    value,
+                    result
+                ),
+                exc_info=True
+            )
+            raise
+
+        return result
 
     @staticmethod
     def _post_resolve(match_object, original_value, preresolved_value):
