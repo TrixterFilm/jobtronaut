@@ -47,7 +47,7 @@ def get_arguments_objects(task_id):
         list: Arguments objects
 
     """
-    ARGUMENTS_RE = re.compile(r"\)\(\"(?P<arguments>.*)\"\)\.script\(\)")
+    ARGUMENTS_RE = re.compile(r"\)\(\"(?P<arguments>.*)\"\)(;task)?\.script\(\)")
     task_id = task_id.replace(" ", "")  # when copy pasting the task id from tractor it includes spaces
     argument_objects = []
 
