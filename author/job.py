@@ -32,6 +32,7 @@ import getpass
 import json
 import logging
 import os
+import tempfile
 import uuid
 
 from datetime import date
@@ -222,12 +223,15 @@ class Job(author.Job):
         except IOError:
             _LOG.error("Unable to dump job file.", exc_info=True)
 
-    def submit(self, dump_job=True, **kwargs):
+    def submit(self, dump_job=True, expandchunk=False, **kwargs):
         """ convenience wrapper for the spool method that enables setting
         job attributes as keyword arguments at submission time and more
 
         Args:
             dump_job (bool): If True it will store the job as alf file.
+            expandchunk (bool): If True it will not submit a new job.
+            Instead if will dump the .alf reprensentation as temporary file to disk and invoke it
+            via Tractor's `TR_EXPAND_CHUNK` mechanism.
             The storage place is defined in the JOB_STORAGE_PATH_TEMPLATE.
             **kwargs: arguments that should be set as job attributes
 
@@ -243,6 +247,17 @@ class Job(author.Job):
         if INHERIT_ENVIRONMENT:
             _LOG.info("Option to inherit environment was enabled. Passing the environment to the job.")
             self.envkey = [self._get_env_as_tractor_envkey()]
+
+        if expandchunk:
+            # construct a temporary .alf file
+            _tmp_directory = tempfile.gettempdir()
+            alf_file = os.path.join(_tmp_directory, "{}.alf".format(str(uuid.uuid4())))
+            self.dump_job(alf_file)
+
+            # and expand it
+            print("TR_EXPAND_CHUNK \"{}\"".format(alf_file))
+
+            return ""
 
         job_id = self.spool(owner=getpass.getuser())
 
