@@ -86,6 +86,9 @@ def parse_args():
                                help="Submit the job in a paused state.")
     submit_parser.add_argument("--local", action="store_const", const=True, default=False,
                                help="Submit the job locally. All commands will be enforced to run on the spoolhost.")
+    submit_parser.add_argument("--expandchunk", action="store_const", const=True, default=False,
+                               help="If set no new job will be spooled and instead the job's .alf representation will "
+                                    "be invoked via Tractor's `TR_EXPAND_CHUNK` mechanism.")
     submit_parser.add_argument("--task", type=str, required=True,
                                help="Set the root task for the job.")
     submit_parser.add_argument("--title", type=str, default="",
@@ -139,7 +142,8 @@ def submit(args):
             tags=args.tags,
             priority=args.priority,
             projects=args.projects or [],
-            envkey=args.environment or []
+            envkey=args.environment or [],
+            expandchunk=args.expandchunk
         )
         _LOG.info("Successfully submitted job \"{0}\" with jid: {1}".format(args.title or args.task, jid))
     except Exception as error:
