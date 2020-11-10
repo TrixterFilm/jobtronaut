@@ -118,7 +118,7 @@ def supported_schemas(*argument):  # contains the actual supported schemas
                 field = getattr(args[0], fieldname)
 
                 if fieldname.startswith(func.__name__) and isinstance(field, MethodStore):
-                    _LOG.info("{0}: Validating argument {1} against schema {2}\nValue: {3}"
+                    _LOG.debug("{0}: Validating argument {1} against schema {2}\nValue: {3}"
                               .format(processor_name, args[1], field.schema, value))
                     # We try to validate it directly first. If validation failes an exception is thrown
                     # this has to be wrapped as schema.validate raises an exception if the schema can't be matched
