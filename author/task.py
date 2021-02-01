@@ -744,15 +744,52 @@ class Task(author.Task):
 
         _LOG.info("Dump temporary job file as '{}'".format(alf_file))
 
+        required_jobs = str(_root_task.required_tasks)
+
+        all_tasks = re.findall(r"(?<=['\"])[a-zA-Z0-9_]+(?=['\"])", required_jobs)
+        task_count_by_name = {}
+
+        for task in all_tasks:
+            if task not in task_count_by_name:
+                task_count_by_name[task] = 1
+            else:
+                task_count_by_name[task] += 1
+
+        sighted_arguments = {k: 0 for k in task_count_by_name}
+
+        def convert(matchobj):
+            task = matchobj.groupdict()["task"]
+            arguments = arguments_mapping[task]
+
+            if isinstance(arguments, dict):
+                if task_count_by_name[task] > 1:
+                    _LOG.warning(
+                        "You require the task `{task}` several times, but only provide a single arguments dictionary. "
+                        "Note that this will be applied to all `{task}` references".format(task=task)
+                    )
+            elif isinstance(arguments, (list, tuple)):
+                if len(arguments) != task_count_by_name[task]:
+                    raise AssertionError(
+                        "You wanna pass {} individual arguments dictionary/dictionaries to {} `{}` task references. "
+                        "Ensure you provide the same amount of argument dictionaries as you require tasks.\n"
+                        "If you want to apply the same argument dictionary to all task references use it directly "
+                        "instead of a list/tuple.".format(len(arguments), task_count_by_name[task], task)
+                    )
+                else:
+                    arguments = arguments[sighted_arguments[task]]
+                    sighted_arguments[task] += 1
+
+                    return "Job(\"{}\", {}, local={})".format(
+                        matchobj.groupdict()["task"],
+                        arguments,
+                        local
+                    )
+            else:
+                raise NotImplementedError("Unsupported type. Supported is dict or a list/tuple with dicts.")
+
         Job(
             jobs_to_task(
-                eval(  # yayaya we all know that's evil... who cares ;)
-                    re.sub(
-                        r"['\"]{1}\w+['\"]{1}",
-                        "Job(\g<0>, arguments_mapping[\g<0>], local={})".format(local),
-                        "{}".format(_root_task.required_tasks)
-                    )
-                )
+                eval(re.sub(r"['\"](?P<task>[a-zA-Z0-9_]+)['\"]", convert, required_jobs))
             )
         ).dump_job(alf_file)
 
