@@ -767,6 +767,7 @@ class Task(author.Task):
                         "You require the task `{task}` several times, but only provide a single arguments dictionary. "
                         "Note that this will be applied to all `{task}` references".format(task=task)
                     )
+
             elif isinstance(arguments, (list, tuple)):
                 if len(arguments) != task_count_by_name[task]:
                     raise AssertionError(
@@ -778,14 +779,10 @@ class Task(author.Task):
                 else:
                     arguments = arguments[sighted_arguments[task]]
                     sighted_arguments[task] += 1
-
-                    return "Job(\"{}\", {}, local={})".format(
-                        matchobj.groupdict()["task"],
-                        arguments,
-                        local
-                    )
             else:
                 raise NotImplementedError("Unsupported type. Supported is dict or a list/tuple with dicts.")
+
+            return "Job(\"{}\", {}, local={})".format(task, arguments, local)
 
         Job(
             jobs_to_task(
