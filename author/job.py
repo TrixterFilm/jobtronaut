@@ -473,6 +473,9 @@ def jobs_to_task(jobs, parent_task=None, wait_for_task=None):
         if isinstance(job_or_jobs, (tuple, list)):
             jobs_to_task(job_or_jobs, parent_task=parent_task)
         else:
+            # if we don't dump arguments caches here we will lose the connection
+            # when submitting a converted tasks from jobs
+            job_or_jobs.dump_arguments_cache(job_or_jobs.arguments_file)
             parent_task.subtasks.append(job_or_jobs.task)
 
 
