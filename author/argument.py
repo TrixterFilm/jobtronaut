@@ -66,7 +66,7 @@ class Arguments(dict):
             # if this was passes as the serialized string directly or if this
             # could be a potential file where we dumped the serialized data
             if self._pointing_to_cache_file(arguments):
-                _LOG.info("Deserialize Arguments from file '{}'".format(arguments.split(":")[0]))
+                _LOG.debug("Deserialize Arguments from file '{}'".format(arguments.split(":")[0]))
                 _arguments = self._deserialize_from_file(arguments)
             else:
                 _arguments = self._deserialize(arguments)
