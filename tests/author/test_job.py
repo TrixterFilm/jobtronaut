@@ -99,7 +99,7 @@ class TestJob(TestCase):
                 # cleanup mess
                 os.remove(self._job.arguments_file)
 
-    @patch("jobtronaut.constants.ARGUMENTS_STORAGE_PATH", "/Mari_Cache/tmp/dump")
+    @patch("jobtronaut.constants.ARGUMENTS_STORAGE_PATH", "/tmp/dump")
     def test_dump_arguments_cache_on_job_dependency(self):
         root_task, arguments = tasks.TASKS_DICT.keys()[0], {"uno": 1, "dos": 2, "tres": 3}
 
@@ -176,3 +176,69 @@ class TestJob(TestCase):
         job = Job(root_task, arguments)
         self.assertEqual(len(job.flat_hierarchy["tasks"]), 1)
         self.assertTrue("Elements" not in " ".join([_.title for _ in job.flat_hierarchy["tasks"]]))
+
+    def test_modify(self):
+
+        root_task, arguments = tasks.TASKS_DICT.keys()[0], {"uno": [1, 2, 3], "dos": 2, "tres": 3}
+
+        for task in Plugins().tasks.values():
+            task.flags = task.Flags.PER_ELEMENT
+            task.cmd = lambda x: ["/bin/echo", "Hello World"]
+            task.tags = ["foo", "bar"]
+
+        job = Job(root_task, arguments)
+
+        def _get_attribute_listed(job, type, attribute):
+            return [_.attributeByName.get(attribute).value for _ in job.flat_hierarchy[type]]
+
+        job.modify_cmds(predicate=False, attribute="tags", value=["foobar"])
+        self.assertListEqual(
+            [["foo", "bar"], ["foo", "bar"], ["foo", "bar"]],
+            _get_attribute_listed(job, "cmds", "tags")
+        )
+
+        job.modify_cmds(predicate=True, attribute="tags", value=["foobar"])
+        self.assertListEqual(
+            [["foobar"], ["foobar"], ["foobar"]],
+            _get_attribute_listed(job, "cmds", "tags")
+        )
+
+        class Counter(object):
+            def __init__(self):
+                self.count = 0
+
+            def __call__(self):
+                self.count += 1
+                return self.count
+
+        def _skip(command, counter, number):
+            if counter() == number:
+                print counter.count
+                return False
+            else:
+                return True
+
+        def _pick(command, counter, options):
+            return options
+
+        counter = Counter()
+        job.modify_cmds(predicate=lambda x: _skip(x, counter, 1), attribute="tags", value=["bar", "foo"])
+        self.assertListEqual(
+            [["foobar"], ["bar", "foo"], ["bar", "foo"]],
+            _get_attribute_listed(job, "cmds", "tags")
+        )
+
+        counter = Counter()
+        job.modify_cmds(predicate=lambda x: _skip(x, counter, 3), attribute="tags", value=["barfoo"])
+        self.assertListEqual(
+            [["barfoo"], ["barfoo"], ["bar", "foo"]],
+            _get_attribute_listed(job, "cmds", "tags")
+        )
+
+        counter = Counter()
+        job.modify_cmds(predicate=lambda x: _skip(x, counter, 3), attribute="tags", value=lambda x: [["one"], ["zero"]][counter.count % 2])
+        self.assertListEqual(
+            [["zero"], ["one"], ["bar", "foo"]],
+            _get_attribute_listed(job, "cmds", "tags")
+        )
+
