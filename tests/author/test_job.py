@@ -188,6 +188,12 @@ class TestJob(TestCase):
 
         job = Job(root_task, arguments)
 
+        # add idx attribute to each command to differentiate them and
+        # refer to them by number later in the test
+        for idx, cmd in enumerate(job.flat_hierarchy["cmds"]):
+            cmd.MEMBERS.append("idx")
+            cmd.idx = idx
+
         def _get_attribute_listed(job, type, attribute):
             return [_.attributeByName.get(attribute).value for _ in job.flat_hierarchy[type]]
 
@@ -203,37 +209,19 @@ class TestJob(TestCase):
             _get_attribute_listed(job, "cmds", "tags")
         )
 
-        class Counter(object):
-            def __init__(self):
-                self.count = 0
-
-            def __call__(self):
-                self.count += 1
-                return self.count
-
-        def _skip(command, counter, number):
-            if counter() == number:
-                print counter.count
-                return False
-            else:
-                return True
-
-        counter = Counter()
-        job.modify_cmds(predicate=lambda x: _skip(x, counter, 1), attribute="tags", value=["bar", "foo"])
+        job.modify_cmds(predicate=lambda x: x.idx != 0, attribute="tags", value=["bar", "foo"])
         self.assertListEqual(
             [["foobar"], ["bar", "foo"], ["bar", "foo"]],
             _get_attribute_listed(job, "cmds", "tags")
         )
 
-        counter = Counter()
-        job.modify_cmds(predicate=lambda x: _skip(x, counter, 3), attribute="tags", value=["barfoo"])
+        job.modify_cmds(predicate=lambda x: x.idx != 2, attribute="tags", value=["barfoo"])
         self.assertListEqual(
             [["barfoo"], ["barfoo"], ["bar", "foo"]],
             _get_attribute_listed(job, "cmds", "tags")
         )
 
-        counter = Counter()
-        job.modify_cmds(predicate=lambda x: _skip(x, counter, 3), attribute="tags", value=lambda x: [["one"], ["zero"]][counter.count % 2])
+        job.modify_cmds(predicate=lambda x: x.idx != 2, attribute="tags", value=lambda x: [["zero"], ["one"]][x.idx])
         self.assertListEqual(
             [["zero"], ["one"], ["bar", "foo"]],
             _get_attribute_listed(job, "cmds", "tags")
