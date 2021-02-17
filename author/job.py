@@ -382,28 +382,28 @@ class Job(author.Job):
         """ modifies task or command attributes if the predicate returns true
 
         Args:
-            predicate: a callable that returns True or False
+            predicate: True or False or alternatively a callable that returns True or False
             attribute: the attribute to modify
-            value: the new value for the attribute
+            value: the new value for the attribute or a callable that returns the new value
             scope: "cmds" or "tasks"
 
         Returns:
 
         """
         for child in self.flat_hierarchy[scope]:
-            if predicate(child):
+            if predicate == True or (predicate(child) if callable(predicate) else False):
                 if child.attributeByName.get(attribute):
-                    child.attributeByName.get(attribute).value = value
+                    child.attributeByName.get(attribute).value = value(child) if callable(value) else value
                 elif getattr(child, attribute):
-                    setattr(child, attribute, value)
+                    setattr(child, attribute, value(child) if callable(value) else value)
 
     def modify_tasks(self, predicate=lambda task: False, attribute="", value=""):
         """ calls modify with a "tasks" scope
 
         Args:
-            predicate: a callable that returns True or False
+            predicate: True or False or alternatively a callable that returns True or False
             attribute: the attribute to modify
-            value: the new value for the attribute
+            value: the new value for the attribute or a callable that returns the new value
 
         Returns:
 
@@ -414,9 +414,9 @@ class Job(author.Job):
         """ calls modify with a "cmds" scope
 
         Args:
-            predicate: a callable that returns True or False
+            predicate: True or False or alternatively a callable that returns True or False
             attribute: the attribute to modify
-            value: the new value for the attribute
+            value: the new value for the attribute or a callable that returns the new value
 
         Returns:
 
