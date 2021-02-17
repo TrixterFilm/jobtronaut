@@ -218,9 +218,6 @@ class TestJob(TestCase):
             else:
                 return True
 
-        def _pick(command, counter, options):
-            return options
-
         counter = Counter()
         job.modify_cmds(predicate=lambda x: _skip(x, counter, 1), attribute="tags", value=["bar", "foo"])
         self.assertListEqual(
