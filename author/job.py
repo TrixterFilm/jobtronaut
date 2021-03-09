@@ -220,8 +220,9 @@ class Job(author.Job):
             with open(filepath, "w") as f:
                 f.write(self.asTcl())
                 _LOG.info("Dumping job to file: '{}'".format(filepath))
-        except IOError:
+        except (IOError, OSError):
             _LOG.error("Unable to dump job file.", exc_info=True)
+            raise
 
     def submit(self, dump_job=True, expandchunk=False, **kwargs):
         """ convenience wrapper for the spool method that enables setting
