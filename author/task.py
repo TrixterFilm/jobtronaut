@@ -197,7 +197,7 @@ class Task(author.Task):
         if self.is_handle_task and self._has_cmd(self.__class__):
             _LOG.debug("Handletask {}. Adding simple dependency...".format(self))
             self._add_command_tasks(*args, **kwargs)
-        elif self.elements_id and self.per_element and self._is_expected_iterable(self.elements.processed):
+        elif self.elements_id and self.per_element and self._is_expected_iterable(getattr(self.elements, "processed", None)):
             for element in self.elements.processed:
                 element = ArgumentValue(self.elements.initial, element)
                 self._add_required_tasks(self.required_tasks, self, elements=element, *args, **kwargs)
@@ -334,7 +334,7 @@ class Task(author.Task):
         cls = self.__class__
         # check if the task is capable to handle multi elements or not
         # pass the process task_arguments to the class
-        if not self.per_element or not self._is_expected_iterable(self.elements.processed):
+        if not self.per_element or not self._is_expected_iterable(getattr(self.elements, "processed", None)):
             _task = cls(self.arguments, is_handle_task=False, *args, **kwargs)
             self._append_elements_to_title(_task)
             self._add_command(_task)
