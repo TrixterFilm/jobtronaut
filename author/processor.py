@@ -124,7 +124,7 @@ def supported_schemas(*argument):  # contains the actual supported schemas
                     # this has to be wrapped as schema.validate raises an exception if the schema can't be matched
                     try:
                         valid = field.schema.validate(value)
-                        _LOG.info("{0}: Found matching processor implementation for argument \"{1}\" with value \"{2}\""
+                        _LOG.debug("{0}: Found matching processor implementation for argument \"{1}\" with value \"{2}\""
                                   .format(processor_name, args[1], valid))
                         break
                     except SchemaError:
