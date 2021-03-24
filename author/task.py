@@ -821,9 +821,6 @@ class TaskWithOverrides(object):
 
         assert overrides, "No Task overrides defined."
 
-        self._allowed_overrides = [_ for _ in Task.__dict__
-                                   if not inspect.ismethod(_) or not inspect.isfunction(_)]
-
         self.overrides = overrides
         self.basetask = basetask
 
@@ -835,16 +832,14 @@ class TaskWithOverrides(object):
             constructor
         """
         task_cls = Plugins().task(self.basetask)
+        task_dict = dict(Task.__dict__)
+        task_dict.update(task_cls.__dict__)
 
-        # prevent from overriding task that are requiring other tasks with overrides
-        # to avoid misbehaviour and additional complexity
-        assert not [_ for _ in task_cls.required_tasks
-                    if isinstance(_, TaskWithOverrides)], "'{}' is already consuming ".format(task_cls) + \
-                                                          "a TaskWithOverrides.\n" + \
-                                                          "Due to the nature of our Plugin system nesting of " + \
-                                                          "TaskWithOverrides is not supported yet."
+        # TODO: we should prevent overrides for protected and private members
+        self._allowed_overrides = task_dict.keys()
 
-        _LOG.info("Designated Task to override {}".format(task_cls))
+        _LOG.debug("Designated Task to override {}".format(task_cls))
+
         # lets store the overrides
         overrides = {}
 
