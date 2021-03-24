@@ -25,11 +25,14 @@
 """ wrapper for executing python code when using clarisse-node --script
 
 The script needs to be called when using clarisse-node with --script flag, because no Clarisse launch mode is capable
-of executing python code directy as we would need within the current implementation of Task.script() within
-the farmsubmission API.
+of executing python code directly as we would need within the current implementation of Task.script() within
+the jobtronaut API.
 
 """
 
 import sys
 
 exec(sys.argv[1])
+# we assume that we always want to stop after our script execution is done
+# but if we won't exit here clarisse wouldn't stop continuing its other processes like rendering
+sys.exit(0)
