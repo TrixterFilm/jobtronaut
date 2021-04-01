@@ -40,8 +40,10 @@ import os
 import re
 import tempfile
 import uuid
+import sys
 
 from collections import Iterable
+from contextlib import contextmanager
 
 from tractor.api import author
 
@@ -793,6 +795,10 @@ class Task(author.Task):
         # expand the job
         print("TR_EXPAND_CHUNK \"{}\"".format(alf_file))
 
+    @contextmanager
+    def report_progress(self, final):
+        yield _Progress(final)
+
 
 class TaskWithOverrides(object):
     """ An extension to existing Tasks
@@ -869,3 +875,58 @@ class TaskWithOverrides(object):
         """ Forward the request for a string representation to the actual task
         """
         return "'{} (with overrides)'".format(self.basetask)
+
+
+class _Progress(object):
+    """
+    A helper class to report progress within a task/command.
+
+    Examples:
+        ```
+        progress = _Progress(10)
+        for i in range(0, 11):
+            progress += 1
+        ```
+        This will automatically print `TR_PROGRESS {percent} %`to sys.stdout including the calculated percentage.
+
+    """
+    def __init__(self, final):
+        """
+
+        Args:
+            final (int): a max value that represents 100%
+        """
+        assert isinstance(final, int), "Value for `final` argument must be of type `int`."
+        assert final > 0, "Value for `final` argument must be > 0."
+        self._final = final
+        self._stepsize = 100 / final
+        self._current = 0
+        print(self)
+
+    def __str__(self):
+        percent = self._current * self._stepsize
+        if percent < 0:
+            percent = 0
+        if percent > 100:
+            percent = 100
+        return "TR_PROGRESS {:3d} %".format(percent)
+
+    def __add__(self, other):
+        assert isinstance(other, int), "Value for `other` argument must be of type `int`."
+        self._current += other
+        print(self)
+        sys.stdout.flush()
+        return self
+
+    def __iadd__(self, other):
+        return self.__add__(other)
+
+    def __sub__(self, other):
+        assert isinstance(other, int), "Value for `other` argument must be of type `int`."
+        self._current -= other
+        print(self)
+        sys.stdout.flush()
+        return self
+
+    def __isub__(self, other):
+        return self.__sub__(other)
