@@ -909,7 +909,7 @@ class _Progress(object):
             percent = 0
         if percent > 100:
             percent = 100
-        return "TR_PROGRESS {:3d} %".format(percent)
+        return "TR_PROGRESS {:3.0f} %".format(percent)
 
     def __add__(self, other):
         assert isinstance(other, int), "Value for `other` argument must be of type `int`."
