@@ -262,15 +262,15 @@ class Job(author.Job):
             return ""
 
         # allow to override the host and port configured via TRACTOR_ENGINE string
-        hostname, port = None, None
-        if TRACTOR_ENGINE:
-            _ = TRACTOR_ENGINE.split(":")
-            hostname, port = _[0], int(_[1])
+        hostname, port = kwargs.get("hostname"), kwargs.get("port")
+        if TRACTOR_ENGINE and not hostname and not port:
+            _tractor_engine_tokens = TRACTOR_ENGINE.split(":")
+            hostname, port = _tractor_engine_tokens[0], int(_tractor_engine_tokens[1])
 
         job_id = self.spool(
             owner=getpass.getuser(),
-            hostname=kwargs.get("hostname", hostname),
-            port=kwargs.get("port", port)
+            hostname=hostname,
+            port=port
         )
 
         if dump_job:
