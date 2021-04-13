@@ -899,23 +899,37 @@ class _Progress(object):
         assert isinstance(final, int), "Value for `final` argument must be of type `int`."
         assert final > 0, "Value for `final` argument must be > 0."
         self._final = final
-        self._stepsize = 100 / final
+        self._stepsize = float(100) / final
         self._current = 0
-        print(self)
+        self._previous_percent = 0
+        self.report()
 
-    def __str__(self):
-        percent = self._current * self._stepsize
+    @property
+    def percent(self):
+        percent = int(round(self._current * self._stepsize))
         if percent < 0:
             percent = 0
         if percent > 100:
             percent = 100
-        return "TR_PROGRESS {:3.0f} %".format(percent)
+
+        return percent
+
+    def report(self):
+        print(self)
+        sys.stdout.flush()
+
+    def __str__(self):
+        return "TR_PROGRESS {:3.0f} %".format(self.percent)
 
     def __add__(self, other):
         assert isinstance(other, int), "Value for `other` argument must be of type `int`."
+        previous_percent = self.percent
         self._current += other
-        print(self)
-        sys.stdout.flush()
+        current_percent = self.percent
+
+        if previous_percent != current_percent:
+            self.report()
+
         return self
 
     def __iadd__(self, other):
@@ -923,9 +937,13 @@ class _Progress(object):
 
     def __sub__(self, other):
         assert isinstance(other, int), "Value for `other` argument must be of type `int`."
+        previous_percent = self.percent
         self._current -= other
-        print(self)
-        sys.stdout.flush()
+        current_percent = self.percent
+
+        if previous_percent != current_percent:
+            self.report()
+
         return self
 
     def __isub__(self, other):
