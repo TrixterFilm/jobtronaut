@@ -29,6 +29,7 @@ import imp
 import logging
 import traceback
 import os
+import re
 import sys
 
 
@@ -111,6 +112,15 @@ JOB_STORAGE_PATH_TEMPLATE = _get_configuration_value(
     validator=(
         lambda x: "{user}" in x and "{date}" in x and "{job_id}" in x if x else True,
         "Missing {user} or {date} or {job_id} placeholder in template path. Please ensure to use all of those."
+    )
+)
+
+TRACTOR_ENGINE = _get_configuration_value(
+    "TRACTOR_ENGINE",
+    validator=(
+        lambda x: isinstance(x, basestring) and len(x.split(":")) == 2 and re.match(r"\d+", x.split(":")[-1]),
+        "TRACTOR_ENGINE must be a string using that format `<HOSTNAME>:<PORT>. "
+        "<PORT> must be convertible to int."
     )
 )
 

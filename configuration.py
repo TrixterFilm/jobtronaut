@@ -49,6 +49,9 @@ COMMANDFLAGS_ARGUMENT_NAME = "additional_command_flags"
 # storage path template for our jobs as alf files
 JOB_STORAGE_PATH_TEMPLATE = ""
 
+# engine described via `<HOSTNAME>:<PORT>`
+TRACTOR_ENGINE = ""
+
 # to keep the engine user credentials more secret a function callable can be defined
 # that would return the credentials tuple (username, password)
 TRACTOR_ENGINE_CREDENTIALS_RESOLVER = lambda: ("unknown_user", "unknown_password")

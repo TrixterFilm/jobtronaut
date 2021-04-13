@@ -44,7 +44,8 @@ from ..constants import (
     JOB_STORAGE_PATH_TEMPLATE,
     LOGGING_NAMESPACE,
     INHERIT_ENVIRONMENT,
-    ENVIRONMENT_RESOLVER
+    ENVIRONMENT_RESOLVER,
+    TRACTOR_ENGINE
 )
 
 from .plugins import Plugins
@@ -260,7 +261,17 @@ class Job(author.Job):
 
             return ""
 
-        job_id = self.spool(owner=getpass.getuser())
+        # allow to override the host and port configured via TRACTOR_ENGINE string
+        hostname, port = None, None
+        if TRACTOR_ENGINE:
+            _ = TRACTOR_ENGINE.split(":")
+            hostname, port = _[0], int(_[1])
+
+        job_id = self.spool(
+            owner=getpass.getuser(),
+            hostname=kwargs.get("hostname", hostname),
+            port=kwargs.get("port", port)
+        )
 
         if dump_job:
             if JOB_STORAGE_PATH_TEMPLATE:
