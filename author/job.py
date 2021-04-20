@@ -32,6 +32,7 @@ import getpass
 import json
 import logging
 import os
+import sys
 import tempfile
 import uuid
 
@@ -258,6 +259,7 @@ class Job(author.Job):
 
             # and expand it
             print("TR_EXPAND_CHUNK \"{}\"".format(alf_file))
+            sys.stdout.flush()
 
             return ""
 
