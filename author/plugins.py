@@ -58,6 +58,7 @@ class Plugins(Singleton):
             Singleton._initialized = True
             self.__tasks = dict()
             self.__processors = dict()
+            self.__sitestatusfilters = dict()
             self.__not_loaded = dict()
             self.__module_paths_map = defaultdict(list)
             self.initialize()
@@ -126,7 +127,7 @@ class Plugins(Singleton):
                 sys.path.extend(path)
                 for _module in self._source_modules(path, index):
                     for name, obj in dict(inspect.getmembers(_module, lambda cls: inspect.isclass(cls))).iteritems():
-                        if self.__tasks.get(name) or self.__processors.get(name):
+                        if self.__tasks.get(name) or self.__processors.get(name) or self.__sitestatusfilters.get(name):
                             if ignore_duplicates:
                                 _LOG.warning("Plugin \"{0}\" has been found multiple times. Using original definition."
                                              .format(name))
@@ -134,7 +135,7 @@ class Plugins(Singleton):
                             else:
                                 raise AssertionError(
                                     "Plugin \"{0}\" has been found multiple times. Please make sure "
-                                    "Task and Processor names are unique.".format(name)
+                                    "Task, Processor and SiteStatusFilter names are unique.".format(name)
                                 )
                         if hasattr(_module, "Task") \
                                 and issubclass(obj, _module.Task) \
@@ -146,6 +147,11 @@ class Plugins(Singleton):
                                 and not obj.__name__ == "BaseProcessor":
                             self.__processors[name] = obj
                             self.__module_paths_map[_module.__file__].append(obj)
+                        elif hasattr(_module, "TrStatusFilter") \
+                                and issubclass(obj, _module.TrStatusFilter) \
+                                and not obj.__name__ == "TrStatusFilter":
+                            self.__sitestatusfilters[name] = obj
+                            self.__module_paths_map[_module.__file__].append(obj)
 
     def _clear(self):
         """ Initializes the tasks and processors to an empty dict.
@@ -153,6 +159,7 @@ class Plugins(Singleton):
         """
         self.__tasks = dict()
         self.__processors = dict()
+        self.__sitestatusfilters = dict()
         self.__module_paths_map = defaultdict(list)
 
     # this is just a static helper we make use of in plugin.info(short=False)
@@ -186,6 +193,16 @@ class Plugins(Singleton):
         return self.__processors
 
     @property
+    def sitestatusfilters(self):
+        """ Holds the available sitestatusfilters.
+
+        Returns:
+             dict: all available sitestatusfilter classes
+
+        """
+        return self.__sitestatusfilters
+
+    @property
     def plugins(self):
         """ Get all available processors AND tasks.
 
@@ -194,6 +211,7 @@ class Plugins(Singleton):
         """
         all_plugins = self.__tasks.copy()
         all_plugins.update(self.__processors)
+        all_plugins.update(self.__sitestatusfilters)
         return all_plugins
 
     def task(self, name):
@@ -234,6 +252,21 @@ class Plugins(Singleton):
             closest = difflib.get_close_matches(name, self.__processors.keys())
             raise KeyError("No processor found for {0}, closest matches are {1}".format(name, closest))
 
+    def sitestatusfilter(self, name):
+        """ Get the sitestusfilter class by given name.
+
+        Args:
+            name (str): sitestusfilter class name
+
+        Returns:
+             SiteStatusFilter (class): sitestusfilter class
+        """
+        try:
+            return self.__sitestatusfilters[name]
+        except KeyError:
+            closest = difflib.get_close_matches(name, self.__sitestatusfilters.keys())
+            raise KeyError("No sitestatusfilter found for {0}, closest matches are {1}".format(name, closest))
+
     def plugin(self, name):
         """ Get the plugin class and type by given name.
 
@@ -259,7 +292,13 @@ class Plugins(Singleton):
             str: The plugin's type as a string
         """
         assert name in self.plugins, "Plugin {0} could not be found.".format(name)
-        return "Task" if name in self.__tasks else "Processor"
+
+        if name in self.__tasks:
+            return "Task"
+        if name in self.__processors:
+            return "Processor"
+        if name in self.__sitestatusfilters:
+            return "SiteStatusFilter"
 
     def plugin_description(self, name):
         """ Get information for a plugin and return a nicely formatted description

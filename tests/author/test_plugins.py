@@ -30,6 +30,7 @@ from jobtronaut.author.plugins import Plugins
 from .. import TestCase
 from .plugins_fixtures import some_processors as processors
 from .plugins_fixtures import some_tasks as tasks
+from .plugins_fixtures import some_sitestatusfilters as sitestatusfilters
 
 
 class TestPlugins(TestCase):
@@ -55,10 +56,17 @@ class TestPlugins(TestCase):
             sorted(Plugins().tasks)
         )
 
+    def test_sitestatusfilters(self):
+        """ check if available sitestatusfilter match the ones we provide """
+        self.assertListEqual(
+            sorted(sitestatusfilters.FILTERS_DICT.keys()),
+            sorted(Plugins().sitestatusfilters)
+        )
+
     def test_plugins(self):
         """ check if available plugins match the ones we provide """
         self.assertListEqual(
-            sorted(tasks.TASKS_DICT.keys() + processors.PROCESSORS_DICT.keys()),
+            sorted(tasks.TASKS_DICT.keys() + processors.PROCESSORS_DICT.keys() + sitestatusfilters.FILTERS_DICT.keys()),
             sorted(Plugins().plugins)
         )
 
@@ -87,6 +95,19 @@ class TestPlugins(TestCase):
 
         self.assertIn("No processor found for", context.exception.message)
 
+    def test_sitestatusfilter(self):
+        """ check if we get the processor class we would expect """
+        for filter_name in sitestatusfilters.FILTERS_DICT:
+            self.assertEqual(
+                Plugins().sitestatusfilter(filter_name).__name__,
+                sitestatusfilters.FILTERS_DICT[filter_name].__name__
+            )
+
+        with self.assertRaises(KeyError) as context:
+            Plugins().sitestatusfilter("NonExistingFilter")
+
+        self.assertIn("No sitestatusfilter found for", context.exception.message)
+
     def test_plugin(self):
         """ check if we get the plugin class we expect """
         plugins = processors.PROCESSORS_DICT.copy()
@@ -111,6 +132,11 @@ class TestPlugins(TestCase):
         for task in tasks.TASKS_DICT.keys():
             self.assertEqual(
                 Plugins().plugin_class(task), "Task"
+            )
+
+        for sitestatusfilter in sitestatusfilters.FILTERS_DICT.keys():
+            self.assertEqual(
+                Plugins().plugin_class(sitestatusfilter), "SiteStatusFilter"
             )
 
         with self.assertRaises(AssertionError) as context:
@@ -139,7 +165,9 @@ class TestPlugins(TestCase):
             # ensure that we raise an error if we find duplicates
             with self.assertRaises(AssertionError) as context:
                 Plugins().initialize()
-            self.assertIn("Please make sure Task and Processor names are unique", context.exception.message)
+
+            self.assertIn("names are unique", context.exception.message)
+
             Plugins().initialize(ignore_duplicates=True)
 
     def test_get_all_arguments(self):
@@ -164,3 +192,6 @@ class TestPlugins(TestCase):
 
         for processor_name in processors.PROCESSORS_DICT.keys():
             self.assertEqual(processors.__file__, Plugins().get_module_path(processor_name))
+
+        for filter_name in sitestatusfilters.FILTERS_DICT.keys():
+            self.assertEqual(sitestatusfilters.__file__, Plugins().get_module_path(filter_name))
