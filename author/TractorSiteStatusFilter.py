@@ -44,7 +44,7 @@ class TractorSiteStatusFilter(TrStatusFilter):
 
     def __init__(self):
         self.super = super(type(self), self)  # magic proxy for whatever reasons
-        self._name = self.__class__.__name__
+        self._name = "FoobarFilter"#self.__class__.__name__
 
         _BLADE_LOG.info("Trying to delegate site status filter calls to plugin `{}`".format(self._name))
 

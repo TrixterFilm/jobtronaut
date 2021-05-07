@@ -115,7 +115,7 @@ class Plugins(Singleton):
         This will (re-)initialize the Plugins singleton and (re-)load all plugins
         (tasks, processors) that can be found in the PLUGIN_PATH.
         """
-        if self.__tasks or self.__processors:
+        if self.__tasks or self.__processors or self.__sitestatusfilters:
             self._clear()
 
         _LOG.info("Current jobtronaut plugins searchpaths: {}".format("\n".join(PLUGIN_PATH)))
