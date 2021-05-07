@@ -118,9 +118,10 @@ class Plugins(Singleton):
         if self.__tasks or self.__processors or self.__sitestatusfilters:
             self._clear()
 
-        _LOG.info("Current jobtronaut plugins searchpaths: {}".format("\n".join(PLUGIN_PATH)))
+        _PLUGIN_PATH = list(set(PLUGIN_PATH))
+        _LOG.info("Current jobtronaut plugins searchpaths: {}".format("\n".join(_PLUGIN_PATH)))
 
-        for index, path in enumerate(PLUGIN_PATH):
+        for index, path in enumerate(_PLUGIN_PATH):
             if not os.path.exists(path):
                 _LOG.warning("Defined jobtronaut plugin searchpath '{}' doesn't exist. Ignore path.".format(path))
             else:
