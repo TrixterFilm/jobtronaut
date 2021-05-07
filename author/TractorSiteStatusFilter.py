@@ -33,10 +33,10 @@ from jobtronaut.constants import (
 )
 
 #_LOG = logging.getLogger("{}.sitestatusfilters".format(LOGGING_NAMESPACE))
-_LOG = logging.getLogger("tractor-blade")
+_BLADE_LOG = logging.getLogger("tractor-blade")
 
 
-_LOG.info("Sourcing `TractorSiteStatusFilter.py` module from jobtronaut...")
+_BLADE_LOG.info("Sourcing `TractorSiteStatusFilter.py` module from jobtronaut...")
 
 
 class TractorSiteStatusFilter(TrStatusFilter):
@@ -46,35 +46,36 @@ class TractorSiteStatusFilter(TrStatusFilter):
         self.super = super(type(self), self)  # magic proxy for whatever reasons
         self._name = self.__class__.__name__
 
-        _LOG.info("Trying to delegate site status filter calls to plugin `{}`".format(self._name))
+        _BLADE_LOG.info("Trying to delegate site status filter calls to plugin `{}`".format(self._name))
 
         self._delegate(self.super.__init__)
         self.processes = {}
 
-    def _delegate(self, function, function_args=(), function_kwargs={}):
+    def _delegate(self, function, function_args=(), function_kwargs={}, keep_cache=False):
         """ handle function call delegation to plugin """
 
         # TODO: handle delegation more dynamically via identifier handlers
         #  so we can automatically pick statusfilter plugins based on things like profile names
         #  or commands
+        _BLADE_LOG.info("Delegating `{}`".format(function.__name__))
 
         plugins = Plugins()
         # enforce bypassing the plugin cache to ensure implemented sites status filter methods
         # are always up to date
-        if ENABLE_PLUGIN_CACHE:
+        if ENABLE_PLUGIN_CACHE and not keep_cache:
             plugins.initialize()
+
         try:
             func = getattr(plugins.sitestatusfilter(self._name), function.__name__)
         except KeyError:
             # fallback to original implementation if the plugin can't be found
-            _LOG.error(
+            _BLADE_LOG.error(
                 "Unable to find a status filter with name `{}`.".format(self._name),
                 exc_info=True
             )
             func = function
 
-        _LOG.info("func: {}, args: {}, kwargs: {} ".format(func, function_args, function_kwargs))
-        return func( *function_args, **function_kwargs)
+        return func(*function_args, **function_kwargs)
 
     def FilterBasicState(self, stateDict, now):
         return self._delegate(self.super.FilterBasicState, (stateDict, now))
@@ -89,13 +90,13 @@ class TractorSiteStatusFilter(TrStatusFilter):
         return self._delegate(self.super.TestDynamicState, (stateDict, now))
 
     def SubprocessFailedToStart(self, cmd):
-        return self._delegate(self.super.SubprocessFailedToStart, (cmd, ))
+        return self._delegate(self.super.SubprocessFailedToStart, (cmd, ), keep_cache=True)
 
     def SubprocessStarted(self, cmd):
         return self._delegate(self.super.SubprocessStarted, (cmd, ))
 
     def SubprocessEnded(self, cmd):
-        return self._delegate(self.super.SubprocessEnded, (cmd, ))
+        return self._delegate(self.super.SubprocessEnded, (cmd, ), keep_cache=True)
 
     def FilterSubprocessOutputLine(self, cmd, textline):
-        return self._delegate(self.super.FilterSubprocessOutputLine, (cmd, textline))
+        return self._delegate(self.super.FilterSubprocessOutputLine, (cmd, textline), keep_cache=True)
