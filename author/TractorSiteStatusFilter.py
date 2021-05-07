@@ -44,7 +44,7 @@ class TractorSiteStatusFilter(TrStatusFilter):
 
     def __init__(self):
         self.super = super(type(self), self)  # magic proxy for whatever reasons
-        self._name = "FoobarFilter"#self.__class__.__name__
+        self._name = self.__class__.__name__
 
         _BLADE_LOG.info("Trying to delegate site status filter calls to plugin `{}`".format(self._name))
 
@@ -66,7 +66,8 @@ class TractorSiteStatusFilter(TrStatusFilter):
             plugins.initialize()
 
         try:
-            func = getattr(plugins.sitestatusfilter(self._name), function.__name__)
+            plugin = plugins.sitestatusfilter(self._name)()
+            func = getattr(plugin, function.__name__)
         except KeyError:
             # fallback to original implementation if the plugin can't be found
             _BLADE_LOG.error(
