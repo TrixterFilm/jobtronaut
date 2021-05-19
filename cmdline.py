@@ -101,6 +101,8 @@ def parse_args():
                                help="Only start the job when the jobs with these ids are done.")
     submit_parser.add_argument("--priority", type=int, default=100,
                                help="Set the priority of the job.")
+    submit_parser.add_argument("--maxactive", type=int, default=0,
+                               help="Limit simultaneous active render nodes. Default value is 0 (no limit)")
     submit_parser.add_argument("--tags", nargs='+', type=str, default=[],
                                help="Speficy custom limit tags on the job.")
     submit_parser.add_argument("--projects", nargs='+', type=str, default=[],
@@ -141,6 +143,7 @@ def submit(args):
             paused=args.paused,
             tags=args.tags,
             priority=args.priority,
+            maxactive=args.maxactive,
             projects=args.projects or [],
             envkey=args.environment or [],
             expandchunk=args.expandchunk
