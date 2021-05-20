@@ -22,6 +22,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                                 #
 # ######################################################################################################################
 
+
 import logging
 
 from tractor.apps.blade.TrStatusFilter import TrStatusFilter
@@ -31,6 +32,8 @@ from jobtronaut.constants import (
     LOGGING_NAMESPACE,
     ENABLE_PLUGIN_CACHE
 )
+from jobtronaut.utilities import CallIntervalLimiter
+
 
 #_LOG = logging.getLogger("{}.sitestatusfilters".format(LOGGING_NAMESPACE))
 _BLADE_LOG = logging.getLogger("tractor-blade")
@@ -46,6 +49,11 @@ class TractorSiteStatusFilter(TrStatusFilter):
         self.super = super(type(self), self)  # magic proxy for whatever reasons
         self._name = self.__class__.__name__
 
+        self._plugins = Plugins()
+        # site status filters are called frequently, so don't perform a rediscovery of plugins
+        # all the time
+        self._plugins_initialize = CallIntervalLimiter(self._plugins.initialize, interval=60)
+
         _BLADE_LOG.info("Trying to delegate site status filter calls to plugin `{}`".format(self._name))
 
         self._delegate(self.super.__init__)
@@ -59,19 +67,19 @@ class TractorSiteStatusFilter(TrStatusFilter):
         #  or commands
         _BLADE_LOG.info("Delegating `{}`".format(function.__name__))
 
-        plugins = Plugins()
         # enforce bypassing the plugin cache to ensure implemented sites status filter methods
         # are always up to date
         if ENABLE_PLUGIN_CACHE and not keep_cache:
-            plugins.initialize()
+            self._plugins_initialize()
 
         try:
-            plugin = plugins.sitestatusfilter(self._name)()
+            plugin = self._plugins.sitestatusfilter(self._name)()
+            # as the plugin inherits from TrSiteStatusFilter there should always be the actual filter function
             func = getattr(plugin, function.__name__)
         except KeyError:
             # fallback to original implementation if the plugin can't be found
-            _BLADE_LOG.error(
-                "Unable to find a status filter with name `{}`.".format(self._name),
+            _BLADE_LOG.warning(
+                "Unable to find site status filter `{}`.".format(self._name),
                 exc_info=True
             )
             func = function
