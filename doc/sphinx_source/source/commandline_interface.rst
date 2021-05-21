@@ -46,6 +46,8 @@ Usage
       --afterjids JIDS      Only start the job when the jobs with these ids are
                             done.
       --priority PRIORITY   Set the priority of the job.
+      --maxactive MAXACTIVE Limit simultaneous active render nodes. Default value
+                            is 0 (no limit)
       --tags TAGS [TAGS ...]
                             Speficy custom limit tags on the job.
       --projects PROJECTS [PROJECTS ...]
