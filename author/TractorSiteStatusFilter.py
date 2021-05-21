@@ -46,12 +46,16 @@ class TractorSiteStatusFilter(TrStatusFilter):
     """ Delegate all filter methods to our plugin or fallback to default implementation """
 
     def __init__(self):
-        self.super = super(type(self), self)  # magic proxy for whatever reasons
+        self.super = super(type(self), self)  # magic proxy (like shown in the TractorSiteStatusFilter.py example)
+
         self._name = self.__class__.__name__
 
+        # we need to store information per reference that we can pass to
+        # individual site status filter plugins and modify from within any method
+        self._persistent_data = {}
+
         self._plugins = Plugins()
-        # site status filters are called frequently, so don't perform a rediscovery of plugins
-        # all the time
+        # site status filters are called frequently, so don't perform a rediscovery of plugins all the time
         self._plugins_initialize = CallIntervalLimiter(self._plugins.initialize, interval=60)
 
         _BLADE_LOG.info("Trying to delegate site status filter calls to plugin `{}`".format(self._name))
@@ -73,7 +77,7 @@ class TractorSiteStatusFilter(TrStatusFilter):
             self._plugins_initialize()
 
         try:
-            plugin = self._plugins.sitestatusfilter(self._name)()
+            plugin = self._plugins.sitestatusfilter(self._name)(persistent_data=self._persistent_data)
             # as the plugin inherits from TrSiteStatusFilter there should always be the actual filter function
             func = getattr(plugin, function.__name__)
         except KeyError:
