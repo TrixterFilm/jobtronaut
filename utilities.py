@@ -1,5 +1,5 @@
 # ######################################################################################################################
-#  Copyright 2020 TRIXTER GmbH                                                                                         #
+#  Copyright 2020-2021 TRIXTER GmbH                                                                                         #
 #                                                                                                                      #
 #  Redistribution and use in source and binary forms, with or without modification, are permitted provided             #
 #  that the following conditions are met:                                                                              #
@@ -22,27 +22,51 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                                 #
 # ######################################################################################################################
 
-from job import (
-    Job,
-    jobs_to_task,
-    submit,
-    submit_as_tasks
-)
-from task import (
-    Task,
-    TaskWithOverrides
-)
-from argument import (
-    Arguments,
-    ArgumentValue
-)
-from processor import (
-    ProcessorDefinition,
-    BaseProcessor,
-    ProcessorSchemas,
-    supported_schemas
-)
+import logging
+import time
 
-from statusfilter import TrStatusFilter
+from .constants import LOGGING_NAMESPACE
 
-from plugins import Plugins
+_LOG = logging.getLogger("{}.author.job".format(LOGGING_NAMESPACE))
+
+
+class CallIntervalLimiter(object):
+    """ allow to limit function calls based on a given time interval
+
+    """
+    def __init__(self, func, default=None, interval=0, run_initial_call=True):
+        self._func = func
+        self._interval = interval
+        self._default = default
+
+        if run_initial_call:
+            self._attempt = None
+        else:
+            self._attempt = time.time()
+
+    def __call__(self, *args, **kwargs):
+        if not self._attempt:
+            _LOG.debug(
+                "Run initial call of given function {}. Start enforcing interval from now....".format(self._func)
+            )
+            result = self._func(*args, **kwargs)
+            self._attempt = time.time()
+        elif time.time() - self._attempt > self._interval:
+            _LOG.debug(
+                "Call given function {} as we passed the given interval of {} seconds.".format(
+                    self._func,
+                    self._interval
+                )
+            )
+            result = self._func(*args, **kwargs)
+            self._attempt = time.time()
+        else:
+            _LOG.debug(
+                (
+                    "We don't passed the given interval since last call or initialization. "
+                    "Prevent call of given function {}.".format(self._func)
+                )
+            )
+            result = self._default
+
+        return result

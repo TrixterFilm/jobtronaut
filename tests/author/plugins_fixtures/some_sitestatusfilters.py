@@ -22,27 +22,16 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                                 #
 # ######################################################################################################################
 
-from job import (
-    Job,
-    jobs_to_task,
-    submit,
-    submit_as_tasks
-)
-from task import (
-    Task,
-    TaskWithOverrides
-)
-from argument import (
-    Arguments,
-    ArgumentValue
-)
-from processor import (
-    ProcessorDefinition,
-    BaseProcessor,
-    ProcessorSchemas,
-    supported_schemas
-)
 
-from statusfilter import TrStatusFilter
+from jobtronaut.author import TrStatusFilter
 
-from plugins import Plugins
+
+FILTERS_DICT = {
+    "SiteStatusFilterOne": "",
+    "SiteStatusFilterTwo": "",
+    "SiteStatusFilterThree": ""
+}
+
+for i, _NAME in enumerate(FILTERS_DICT.keys()):
+    FILTERS_DICT[_NAME] = type(_NAME, (TrStatusFilter,), dict())
+    locals()[_NAME] = FILTERS_DICT[_NAME]

@@ -115,7 +115,7 @@ def parse_args():
                                help="Custom environment variables that will be set prior to a command's execution on the "
                                     "farm")
     list_parser = subparsers.add_parser("list", help="Can list all known plugins.")
-    list_parser.add_argument("type", default="all", choices=["all", "tasks", "processors"],
+    list_parser.add_argument("type", default="all", choices=["all", "tasks", "processors", "sitestatusfilters"],
                              help="Define which plugins you want to list.")
     list_parser.add_argument("--info", action="store_const", const=True, default=False,
                                help="Show the detailed information for every plugin.")
@@ -162,6 +162,9 @@ def list_(args):
     if args.type in ["all", "processors"]:
         for _ in sorted(plugins.processors):
             print(plugins.processor(_).info(short=not(args.info)))
+    if args.type in ["all", "sitestatusfilters"]:
+        for _ in sorted(plugins.sitestatusfilters):
+            print(plugins.sitestatusfilter(_).info(short=not(args.info)))
 
 
 def info(args):

@@ -63,10 +63,10 @@ Usage
 **jobtronaut list**::
 
     >> jobtronaut list -h
-    usage: -c list [-h] {all,tasks,processors}
+    usage: -c list [-h] {all,tasks,processors,sitestatusfilters}
 
     positional arguments:
-      {all,tasks,processors}
+      {all,tasks,processors,sitestatusfilters}
                             Define which plugins you want to list.
 
     optional arguments:
