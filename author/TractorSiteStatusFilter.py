@@ -22,7 +22,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                                 #
 # ######################################################################################################################
 
-
+import inspect
 import logging
 
 from tractor.apps.blade.TrStatusFilter import TrStatusFilter
@@ -35,11 +35,9 @@ from jobtronaut.constants import (
 from jobtronaut.utilities import CallIntervalLimiter
 
 
-#_LOG = logging.getLogger("{}.sitestatusfilters".format(LOGGING_NAMESPACE))
-_BLADE_LOG = logging.getLogger("tractor-blade")
+_LOG = logging.getLogger("tractor-blade")
 
-
-_BLADE_LOG.info("Sourcing `TractorSiteStatusFilter.py` module from jobtronaut...")
+_LOG.info("Sourcing `TractorSiteStatusFilter.py` module from jobtronaut...")
 
 
 class TractorSiteStatusFilter(TrStatusFilter):
@@ -58,7 +56,7 @@ class TractorSiteStatusFilter(TrStatusFilter):
         # site status filters are called frequently, so don't perform a rediscovery of plugins all the time
         self._plugins_initialize = CallIntervalLimiter(self._plugins.initialize, interval=60)
 
-        _BLADE_LOG.info("Trying to delegate site status filter calls to plugin `{}`".format(self._name))
+        _LOG.info("Trying to delegate site status filter calls to plugin `{}`".format(self._name))
 
         self._delegate(self.super.__init__)
         self.processes = {}
@@ -69,7 +67,9 @@ class TractorSiteStatusFilter(TrStatusFilter):
         # TODO: handle delegation more dynamically via identifier handlers
         #  so we can automatically pick statusfilter plugins based on things like profile names
         #  or commands
-        _BLADE_LOG.info("Delegating `{}`".format(function.__name__))
+        _LOG.info("Delegating `{}`".format(function.__name__))
+
+        plugin = None
 
         # enforce bypassing the plugin cache to ensure implemented sites status filter methods
         # are always up to date
@@ -82,11 +82,19 @@ class TractorSiteStatusFilter(TrStatusFilter):
             func = getattr(plugin, function.__name__)
         except KeyError:
             # fallback to original implementation if the plugin can't be found
-            _BLADE_LOG.warning(
+            _LOG.error(
                 "Unable to find site status filter `{}`.".format(self._name),
                 exc_info=True
             )
             func = function
+
+        if plugin:
+            _LOG.debug(
+                "Calling filter function on plugin `{}` from `{}`".format(
+                    plugin.__class__.__name__,
+                    inspect.getfile(func)
+                )
+            )
 
         return func(*function_args, **function_kwargs)
 
