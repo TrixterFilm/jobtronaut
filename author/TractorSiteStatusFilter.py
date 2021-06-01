@@ -44,7 +44,9 @@ class TractorSiteStatusFilter(TrStatusFilter):
     """ Delegate all filter methods to our plugin or fallback to default implementation """
 
     def __init__(self):
+        # TODO: use the regular way to super
         self.super = super(type(self), self)  # magic proxy (like shown in the TractorSiteStatusFilter.py example)
+        self.super.__init__()
 
         self._name = self.__class__.__name__
 
@@ -58,7 +60,6 @@ class TractorSiteStatusFilter(TrStatusFilter):
 
         _LOG.info("Trying to delegate site status filter calls to plugin `{}`".format(self._name))
 
-        self._delegate(self.super.__init__)
         self.processes = {}
 
     def _delegate(self, function, function_args=(), function_kwargs={}, keep_cache=False):
@@ -88,15 +89,26 @@ class TractorSiteStatusFilter(TrStatusFilter):
             )
             func = function
 
-        if plugin:
-            _LOG.debug(
-                "Calling filter function on plugin `{}` from `{}`".format(
-                    plugin.__class__.__name__,
-                    inspect.getfile(func)
+        # fallback mechanism!
+        # We'd like to prevent bypassing the default implementation of TrSiteStatusFilter
+        if func != function:
+            if plugin:
+                _LOG.debug(
+                    "Calling filter function on plugin `{}` from `{}`".format(
+                        plugin.__class__.__name__,
+                        inspect.getfile(func)
+                    )
                 )
-            )
 
-        return func(*function_args, **function_kwargs)
+            try:
+                return func(*function_args, **function_kwargs)
+            except:
+                _LOG.error(
+                    "Fallback to derived implementation, because `{}` failed.".format(func),
+                    exc_info=True
+                )
+
+        return function(*function_args, **function_kwargs)
 
     def FilterBasicState(self, stateDict, now):
         return self._delegate(self.super.FilterBasicState, (stateDict, now))
