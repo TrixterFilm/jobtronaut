@@ -25,6 +25,7 @@
 import ast
 import logging
 import os
+import re
 import sys
 import inspect
 import difflib
@@ -353,7 +354,7 @@ class Plugins(Singleton):
         plugin = self.plugin(plugin_name)
         for path, plugins in self.__module_paths_map.items():
             if plugin in plugins:
-                return path
+                return re.sub("\.py$", ".py", path)
 
     @staticmethod
     def _flatten_nested_iterable(iterable, flat=None):

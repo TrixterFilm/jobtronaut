@@ -29,8 +29,8 @@ from tractor.apps.blade.TrStatusFilter import TrStatusFilter
 
 from jobtronaut.author.plugins import Plugins
 from jobtronaut.constants import (
-    LOGGING_NAMESPACE,
-    ENABLE_PLUGIN_CACHE
+    ENABLE_PLUGIN_CACHE,
+    FILTER_SELECTOR
 )
 from jobtronaut.utilities import CallIntervalLimiter
 
@@ -48,65 +48,94 @@ class TractorSiteStatusFilter(TrStatusFilter):
         self.super = super(type(self), self)  # magic proxy (like shown in the TractorSiteStatusFilter.py example)
         self.super.__init__()
 
-        self._name = self.__class__.__name__
+        self._filter_selector = FILTER_SELECTOR
 
         # we need to store information per reference that we can pass to
         # individual site status filter plugins and modify from within any method
         self._persistent_data = {}
 
         self._plugins = Plugins()
-        # site status filters are called frequently, so don't perform a rediscovery of plugins all the time
+
+        def reload_selector():
+
+            _LOG.info("Reloading FILTER_SELECTOR...")
+
+            import jobtronaut.constants
+            reload(jobtronaut.constants)
+            from jobtronaut.constants import FILTER_SELECTOR
+
+            self._filter_selector = FILTER_SELECTOR
+
+        # site status filters are called frequently, so don't perform a rediscovery of plugins and a selector
+        # reload all the time
         self._plugins_initialize = CallIntervalLimiter(self._plugins.initialize, interval=60)
-
-        _LOG.info("Trying to delegate site status filter calls to plugin `{}`".format(self._name))
-
-        self.processes = {}
+        self._reload_selector = CallIntervalLimiter(reload_selector, interval=60)
 
     def _delegate(self, function, function_args=(), function_kwargs={}, keep_cache=False):
         """ handle function call delegation to plugin """
 
-        # TODO: handle delegation more dynamically via identifier handlers
-        #  so we can automatically pick statusfilter plugins based on things like profile names
-        #  or commands
-        _LOG.info("Delegating `{}`".format(function.__name__))
+        self._reload_selector()
+
+        _LOG.debug("Delegating `{}`".format(function.__name__))
+
+        if function.__name__.endswith("State"):
+            selector = lambda: self._filter_selector(function_args[0], None)  # -> pass `stateDict` and no cmd
+        else:
+            selector = lambda: self._filter_selector({}, function_args[0])  # -> pass cmd and empty stateDict
+
+        try:
+            plugin_names = selector()
+        except:
+            _LOG.error("Calling filter selector failed. Unable to delegate to any plugin.", exc_info=True)
+            plugin_names = []
 
         plugin = None
 
-        # enforce bypassing the plugin cache to ensure implemented sites status filter methods
-        # are always up to date
-        if ENABLE_PLUGIN_CACHE and not keep_cache:
-            self._plugins_initialize()
+        if plugin_names:
 
-        try:
-            plugin = self._plugins.sitestatusfilter(self._name)(persistent_data=self._persistent_data)
-            # as the plugin inherits from TrSiteStatusFilter there should always be the actual filter function
-            func = getattr(plugin, function.__name__)
-        except KeyError:
-            # fallback to original implementation if the plugin can't be found
-            _LOG.error(
-                "Unable to find site status filter `{}`.".format(self._name),
-                exc_info=True
-            )
-            func = function
+            if isinstance(plugin_names, basestring):
+                plugin_names = [plugin_names]
 
-        # fallback mechanism!
-        # We'd like to prevent bypassing the default implementation of TrSiteStatusFilter
-        if func != function:
-            if plugin:
-                _LOG.debug(
-                    "Calling filter function on plugin `{}` from `{}`".format(
-                        plugin.__class__.__name__,
-                        inspect.getfile(func)
+            # enforce bypassing the plugin cache to ensure implemented sites status filter methods
+            # are always up to date
+            if ENABLE_PLUGIN_CACHE and not keep_cache:
+                self._plugins_initialize()
+
+            for plugin_name in plugin_names:
+
+                try:
+                    plugin = self._plugins.sitestatusfilter(plugin_name)(persistent_data=self._persistent_data)
+                    # as the plugin inherits from TrSiteStatusFilter there should always be the actual filter function
+                    func = getattr(plugin, function.__name__)
+
+                    break
+
+                except KeyError:
+                    # fallback to original implementation if the plugin can't be found
+                    _LOG.error(
+                        "Unable to find site status filter `{}`.".format(plugin_name),
+                        exc_info=True
                     )
-                )
+                    func = function
 
-            try:
-                return func(*function_args, **function_kwargs)
-            except:
-                _LOG.error(
-                    "Fallback to derived implementation, because `{}` failed.".format(func),
-                    exc_info=True
-                )
+            # fallback mechanism!
+            # We'd like to prevent bypassing the default implementation of TrSiteStatusFilter
+            if func != function:
+                if plugin:
+                    _LOG.debug(
+                        "Calling filter function on plugin `{}` from `{}`".format(
+                            plugin.__class__.__name__,
+                            inspect.getfile(func)
+                        )
+                    )
+
+                try:
+                    return func(*function_args, **function_kwargs)
+                except:
+                    _LOG.error(
+                        "Fallback to derived implementation, because `{}` failed.".format(func),
+                        exc_info=True
+                    )
 
         return function(*function_args, **function_kwargs)
 
