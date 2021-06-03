@@ -166,6 +166,14 @@ INHERIT_ENVIRONMENT = _get_configuration_value(
     )
 )
 
+FILTER_SELECTOR = _get_configuration_value(
+    "FILTER_SELECTOR",
+    validator=(
+        lambda x: inspect.isfunction(x),
+        "FILTER_SELECTOR must be of type callable."
+    )
+)
+
 # Formatting options grabbed from https://misc.flogisoft.com/bash/tip_colors_and_formatting
 BASH_STYLES = {
     # COLORS

@@ -77,3 +77,11 @@ EXECUTABLE_RESOLVER = \
 ENVIRONMENT_RESOLVER = lambda: OrderedDict(sorted(os.environ.items()))
 # Only if True the resolver will be used and the environment be passed to the envkey attribute of the resulting job
 INHERIT_ENVIRONMENT = True
+
+# A way to define a list of sitestatusfilter plugins that will called via the global jobtronaut TractorSiteStatusFilter
+# delegation mechanism. To make this work the path to the jobtronaut author package must be added to the
+# "SiteModulesPath" in the blade.config.
+# The `FILTER_SELECTOR` is supposed to return a list/tuple of sitestatusfilter jobtronaut plugin names. I will go
+# through that list and delegate the filters to the first plugin that can be found in the list. If the list is empty
+# or no item matches an existing plugin it will obtain the default behavior.
+FILTER_SELECTOR = lambda stateDict, cmd: []
