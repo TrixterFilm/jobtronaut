@@ -438,6 +438,16 @@ class Task(author.Task):
                     parent_task.addChild(_paralleltask)
                     parent_task = _paralleltask
 
+        if isinstance(required, basestring):
+            required = (required, )
+        elif not isinstance(required, (list, tuple)):
+            raise ValueError(
+                (
+                    "Unsupported type for given `required_tasks` value. "
+                    "Supported are list, tuple, str. Given {}".format(type(required))
+                )
+            )
+
         for _required in required:
             # check for nested task dependencies
             if isinstance(_required, (tuple, list)):
