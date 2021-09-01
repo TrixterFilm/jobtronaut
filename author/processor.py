@@ -187,10 +187,16 @@ class BaseProcessor(object):
         for arg_to_process in scope:
             argnametokens = arg_to_process.split(".")
             argument = self.task.arguments.__getattribute__(argnametokens[0])
+            try:
+                process_value = self.process(argnametokens[0],
+                                             argument.__getattribute__(argnametokens[1]),
+                                             resolved_parameters)
+            except Exception as error:
+                _LOG.error("Processing failed at task '%s' with processor '%s' and argument '%s %s'" %
+                           (task.__class__.__name__, self.__class__.__name__, argnametokens[0], argument))
+                raise
             argument = ArgumentValue(argument.initial,
-                                     self.process(argnametokens[0],
-                                                  argument.__getattribute__(argnametokens[1]),
-                                                  resolved_parameters)
+                                     process_value
                                      )
             task_arguments.set(argnametokens[0], argument)
 
