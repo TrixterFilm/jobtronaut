@@ -48,16 +48,19 @@ def initialize_engine():
     # otherwise initialize with JENKINS account
     if not _do_test():
 
-        # let tractor deal with engine fallback
         if TRACTOR_ENGINE:
             hostname, port = TRACTOR_ENGINE.split(":")
-        else:
-            hostname, port = None, None
 
-        tractor_query.setEngineClientParam(
-            hostname=hostname,
-            port=int(port) if port else port,
-            user=TRACTOR_ENGINE_CREDENTIALS_RESOLVER()[0],
-            password=TRACTOR_ENGINE_CREDENTIALS_RESOLVER()[1]
-        )
+            tractor_query.setEngineClientParam(
+                hostname=hostname,
+                port=int(port),
+                user=TRACTOR_ENGINE_CREDENTIALS_RESOLVER()[0],
+                password=TRACTOR_ENGINE_CREDENTIALS_RESOLVER()[1]
+            )
+        else:
+            tractor_query.setEngineClientParam(
+                user=TRACTOR_ENGINE_CREDENTIALS_RESOLVER()[0],
+                password=TRACTOR_ENGINE_CREDENTIALS_RESOLVER()[1]
+            )
+
         assert _do_test(), "Unsuccessful login attempt."  # actually we shouldn't need this..
