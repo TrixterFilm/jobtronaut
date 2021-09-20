@@ -130,7 +130,11 @@ def parse_args():
     info_parser.set_defaults(func=info)
 
     query_parser = subparsers.add_parser("query", help="Query jobtronaut related things.")
-    query_parser.add_argument("--arguments", type=str, default="")
+    query_parser.add_argument(
+        "--arguments", type=str, default="",
+        help="Retrieve jobtronaut arguments information from a given tractor task."
+
+    )
     query_parser.set_defaults(func=query)
 
     args = parser.parse_args()

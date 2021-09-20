@@ -84,3 +84,14 @@ Usage
     optional arguments:
       -h, --help  show this help message and exit
 
+
+**jobtronaut query**::
+
+    >> jobtronaut query -h
+    jobtronaut query [-h] [--arguments ARGUMENTS]
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --arguments ARGUMENTS
+                            Retrieve jobtronaut arguments information from a given
+                            tractor task.
