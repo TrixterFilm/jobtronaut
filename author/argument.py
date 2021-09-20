@@ -35,7 +35,10 @@ import os
 import pickle
 import re
 
-from ..constants import LOGGING_NAMESPACE
+from ..constants import (
+    BASH_STYLES,
+    LOGGING_NAMESPACE
+)
 
 _LOG = logging.getLogger("{}.argument".format(LOGGING_NAMESPACE))
 
@@ -226,3 +229,16 @@ class Arguments(dict):
 
     def __repr__(self):
         return "".join(["{0}: {1}\n".format(key, value) for key, value in self.iteritems()])
+
+    def info(self):
+        """ Provides a nicely formatted representation to be used as a terminal output.
+        """
+
+        infostr = "\n{BOLD}{BG_BLUE}{FG_WHITE}ARGUMENTS{END}\n\n"
+        infostr += "".join(
+            ["{{BOLD}}{}{{END}}\n\tinitial: {}\n\tprocessed: {}\n".format(
+                key, value.initial, value.processed) for key, value in sorted(self.items(), key=lambda x: x[0])
+            ]
+        )
+
+        return infostr.format(**BASH_STYLES)
