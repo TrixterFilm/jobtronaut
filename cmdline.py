@@ -31,7 +31,10 @@ import logging
 from .author.plugins import Plugins
 from .author import Job
 
-from .constants import LOGGING_NAMESPACE
+from .constants import (
+    BASH_STYLES,
+    LOGGING_NAMESPACE
+)
 
 _LOG = logging.getLogger("{}.cmdline".format(LOGGING_NAMESPACE))
 
@@ -126,6 +129,17 @@ def parse_args():
                              help="Specify the plugin name for which you want more information.")
     info_parser.set_defaults(func=info)
 
+    query_parser = subparsers.add_parser("arguments", help="Handle existing jobtronaut job/task arguments.")
+    query_parser.add_argument(
+        "search", type=str, help="A task id to extract the arguments object from."
+
+    )
+    query_parser.add_argument(
+        "--filter", type=str, default=".*",
+        help="A regex pattern to filter argument names. Default: '.*'"
+    )
+    query_parser.set_defaults(func=arguments)
+
     args = parser.parse_args()
     args.func(args)
 
@@ -170,3 +184,22 @@ def list_(args):
 def info(args):
     print(Plugins().plugin(args.plugin).info(short=False))
 
+
+def arguments(args):
+
+    from .query.arguments import get_arguments_objects
+
+    _arguments = get_arguments_objects(args.search)
+    if not _arguments:
+        print(
+            (
+                "{{BG_DARKRED}}{{FG_WHITE}}No arguments objects found for given tractor search `{}`. "
+                "Be aware that we can only extract the arguments if the corresponding task implements "
+                "a script method.{{END}}"
+            ).format(
+                args.search
+            ).format(**BASH_STYLES)
+        )
+    else:
+        for __arguments in _arguments:
+            print(__arguments.info(key_filter=args.filter))

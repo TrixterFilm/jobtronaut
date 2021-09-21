@@ -84,3 +84,15 @@ Usage
     optional arguments:
       -h, --help  show this help message and exit
 
+
+**jobtronaut query**::
+
+    >> jobtronaut arguments -h
+    usage: -c arguments [-h] [--filter FILTER] search
+
+    positional arguments:
+      search           A task id to extract the arguments object from.
+
+    optional arguments:
+      -h, --help       show this help message and exit
+      --filter FILTER  A regex pattern to filter argument names. Default: '.*'
