@@ -85,7 +85,7 @@ Usage
       -h, --help  show this help message and exit
 
 
-**jobtronaut query**::
+**jobtronaut arguments**::
 
     >> jobtronaut arguments -h
     usage: -c arguments [-h] [--filter FILTER] search
