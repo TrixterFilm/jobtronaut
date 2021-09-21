@@ -87,11 +87,12 @@ Usage
 
 **jobtronaut query**::
 
-    >> jobtronaut query -h
-    jobtronaut query [-h] [--arguments ARGUMENTS]
+    >> jobtronaut arguments -h
+    usage: -c arguments [-h] [--filter FILTER] search
+
+    positional arguments:
+      search           A task id to extract the arguments object from.
 
     optional arguments:
-      -h, --help            show this help message and exit
-      --arguments ARGUMENTS
-                            Retrieve jobtronaut arguments information from a given
-                            tractor task.
+      -h, --help       show this help message and exit
+      --filter FILTER  A regex pattern to filter argument names. Default: '.*'
