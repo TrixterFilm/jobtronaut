@@ -201,5 +201,5 @@ def arguments(args):
             ).format(**BASH_STYLES)
         )
     else:
-        for arguments in _arguments:
-            print(arguments.info(key_filter=args.filter))
+        for __arguments in _arguments:
+            print(__arguments.info(key_filter=args.filter))
