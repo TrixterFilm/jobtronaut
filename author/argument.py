@@ -241,8 +241,20 @@ class Arguments(dict):
             [
                 "{{BOLD}}{}{{END}}\n\tinitial: {}\n\tprocessed: {}\n".format(
                     key,
-                    re.sub("({|})", "\g<1>\g<1>", str(value.initial)),
-                    re.sub("({|})", "\g<1>\g<1>", str(value.processed))
+                    re.sub(
+                        "({|})",
+                        "\g<1>\g<1>",
+                        str(
+                            value.initial if not isinstance(value.initial, basestring) else "\"{}\"".format(value.initial)
+                        )
+                    ),
+                    re.sub(
+                        "({|})",
+                        "\g<1>\g<1>",
+                        str(
+                            value.processed if not isinstance(value.processed, basestring) else "\"{}\"".format(value.processed)
+                        )
+                    )
                 )
                     for key, value in sorted(arguments_to_show.items(), key=lambda x: x[0])
             ]
