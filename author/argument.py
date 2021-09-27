@@ -238,10 +238,13 @@ class Arguments(dict):
 
         infostr = "\n{BOLD}{BG_BLUE}{FG_WHITE}ARGUMENTS{END}\n\n"
         infostr += "".join(
-            ["{{BOLD}}{}{{END}}\n\tinitial: {}\n\tprocessed: {}\n".format(
-                key, value.initial, value.processed) for key, value in sorted(
-                    arguments_to_show.items(), key=lambda x: x[0]
+            [
+                "{{BOLD}}{}{{END}}\n\tinitial: {}\n\tprocessed: {}\n".format(
+                    key,
+                    re.sub("({|})", "\g<1>\g<1>", str(value.initial)),
+                    re.sub("({|})", "\g<1>\g<1>", str(value.processed))
                 )
+                    for key, value in sorted(arguments_to_show.items(), key=lambda x: x[0])
             ]
         )
 
