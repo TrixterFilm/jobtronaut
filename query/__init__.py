@@ -36,7 +36,7 @@ def initialize_engine():
         try:
             tractor_query.jobs("jid=0")
             return True
-        except tractor_query.PasswordRequired:
+        except (tractor_query.PasswordRequired, tractor_query.TractorQueryError):
             return False
 
     from ..constants import (
