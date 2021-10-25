@@ -24,6 +24,8 @@
 
 import tractor.api.query as tractor_query
 
+from tractor.api.author.base import ModuleEngineClient
+
 
 def initialize_engine():
     """ Initialize Tractor Engine Client
@@ -67,7 +69,7 @@ def initialize_engine():
         _set_engine_params()
 
         if not _do_test():
-            tractor_query.closeEngineClient()
+            ModuleEngineClient.tsid = None
             _set_engine_params()
 
         assert _do_test(), "Unsuccessful login attempt."  # actually we shouldn't need this..
