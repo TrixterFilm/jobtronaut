@@ -62,14 +62,15 @@ def initialize_engine():
                 password=TRACTOR_ENGINE_CREDENTIALS_RESOLVER()[1]
             )
 
-
-    # check if a user and password is already set,
-    # otherwise initialize with JENKINS account
+    # an initial test is likely to fail because no user/password was set
     if not _do_test():
+        # just set the credentials
         _set_engine_params()
 
+        # if this still won't work we have to clear the session entirely
         if not _do_test():
             ModuleEngineClient.tsid = None
             _set_engine_params()
 
-        assert _do_test(), "Unsuccessful login attempt."  # actually we shouldn't need this..
+        # something else don't work as expacted
+        assert _do_test(), "Unsuccessful engine client initialization attempt."
