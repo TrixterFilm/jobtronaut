@@ -49,7 +49,6 @@ class Singleton(object):
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(Singleton, cls).__new__(cls, *args, **kwargs)
-            cls._module_cache = list()
         return cls._instance
 
 
@@ -77,15 +76,11 @@ class Plugins(Singleton):
 
         """
         modules = []
-        for name, path in [
-            (os.path.splitext(_f)[0], os.path.join(searchpath, _f))
-            for _f in os.listdir(searchpath)
-            if os.path.splitext(_f)[1] == ".py"
-            and os.path.splitext(_f)[0] != "__init__"
-        ]:
+        for name, path in [(os.path.splitext(_f)[0], os.path.join(searchpath, _f))
+                                            for _f in os.listdir(searchpath)
+                                            if os.path.splitext(_f)[1] == ".py"
+                                            and os.path.splitext(_f)[0] != "__init__"]:
             modulename = "jobtronaut_{}_{}".format(name, index)
-            current_modules = set(sys.modules.items())
-            module_dependencies = set()
             try:
                 modules.append(imp.load_source(modulename, path))
                 _LOG.debug("Sourced {0} as module named {1}".format(path, modulename))
@@ -97,12 +92,6 @@ class Plugins(Singleton):
                 _LOG.warning(message)
                 for cls in self._parse_and_find_classes(path):
                     self.__not_loaded[cls] = (path, message)
-            finally:
-                module_dependencies = set(sys.modules.items()).difference(current_modules)
-                if module_dependencies:
-                    _LOG.debug("Sourcing Path `{}` loaded `{}`".format(path, {_[0]: _[1] for _ in module_dependencies}))
-                self._module_cache.extend(module_dependencies)
-
         return modules
 
     @staticmethod
@@ -174,17 +163,6 @@ class Plugins(Singleton):
         self.__processors = dict()
         self.__sitestatusfilters = dict()
         self.__module_paths_map = defaultdict(list)
-
-        # TODO: can we detect if one of the modules we're trying to remove is used elsewhere?
-        modules_to_delete = [_[0] for _ in self._module_cache]
-        _LOG.debug("Modules to clear: \n{}".format(",\n".join(modules_to_delete)))
-        for module in modules_to_delete:
-            try:
-                del sys.modules[module]
-                _LOG.debug("Deleted module from cache: `{}`".format(module))
-            except KeyError:
-                pass
-
 
     # this is just a static helper we make use of in plugin.info(short=False)
     @staticmethod
