@@ -148,6 +148,8 @@ def submit(args):
     """ Function that simply runs the argparser and creates and submits
     a job according the the specified arguments.
     """
+
+    jid = None
     # @todo Add arguments to the jobs and tasks metadata
     try:
         jid = Job(args.task, arguments=args.arguments, local=args.local).submit(
@@ -166,6 +168,8 @@ def submit(args):
     except Exception as error:
         _LOG.error("Job submission was NOT successful.", exc_info=True)
         raise error
+
+    return jid
 
 
 def list_(args):
