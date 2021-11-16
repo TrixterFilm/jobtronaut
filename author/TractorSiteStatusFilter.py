@@ -68,7 +68,10 @@ class TractorSiteStatusFilter(TrStatusFilter):
 
         # site status filters are called frequently, so don't perform a rediscovery of plugins and a selector
         # reload all the time
-        self._plugins_initialize = CallIntervalLimiter(self._plugins.initialize, interval=300)
+        self._plugins_initialize = CallIntervalLimiter(
+            lambda: self._plugins.initialize(ignore_duplicates=True),
+            interval=300
+        )
         self._reload_selector = CallIntervalLimiter(reload_selector, interval=300)
 
     def _delegate(self, function, function_args=(), function_kwargs={}, keep_cache=False):
