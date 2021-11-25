@@ -34,10 +34,11 @@ from jobtronaut.constants import (
 )
 from jobtronaut.utilities import CallIntervalLimiter
 
-
-_LOG = logging.getLogger("tractor-blade")
-
-_LOG.info("Sourcing `TractorSiteStatusFilter.py` module from jobtronaut...")
+# TODO: figure out what happens: If we store the logger within a variable
+#  here at module level and reuse it in the filter methods at some point
+#  the stored logger will result in `None`. This happens on an engine restart
+#  but also under other yet unknown circumstances
+logging.getLogger("tractor-blade").info("Sourcing `TractorSiteStatusFilter.py` module from jobtronaut...")
 
 
 class TractorSiteStatusFilter(TrStatusFilter):
@@ -58,7 +59,7 @@ class TractorSiteStatusFilter(TrStatusFilter):
 
         def reload_selector():
 
-            _LOG.info("Reloading FILTER_SELECTOR...")
+            logging.getLogger("tractor-blade").info("Reloading FILTER_SELECTOR...")
 
             import jobtronaut.constants
             reload(jobtronaut.constants)
@@ -79,7 +80,7 @@ class TractorSiteStatusFilter(TrStatusFilter):
 
         self._reload_selector()
 
-        _LOG.debug("Delegating `{}`".format(function.__name__))
+        logging.getLogger("tractor-blade").debug("Delegating `{}`".format(function.__name__))
 
         if function.__name__.endswith("State"):
             selector = lambda: self._filter_selector(function_args[0], None)  # -> pass `stateDict` and no cmd
@@ -89,7 +90,10 @@ class TractorSiteStatusFilter(TrStatusFilter):
         try:
             plugin_names = selector()
         except:
-            _LOG.error("Calling filter selector failed. Unable to delegate to any plugin.", exc_info=True)
+            logging.getLogger("tractor-blade").error(
+                "Calling filter selector failed. Unable to delegate to any plugin.",
+                exc_info=True
+            )
             plugin_names = []
 
         plugin = None
@@ -115,7 +119,7 @@ class TractorSiteStatusFilter(TrStatusFilter):
 
                 except KeyError:
                     # fallback to original implementation if the plugin can't be found
-                    _LOG.error(
+                    logging.getLogger("tractor-blade").error(
                         "Unable to find site status filter `{}`.".format(plugin_name),
                         exc_info=True
                     )
@@ -125,7 +129,7 @@ class TractorSiteStatusFilter(TrStatusFilter):
             # We'd like to prevent bypassing the default implementation of TrSiteStatusFilter
             if func != function:
                 if plugin:
-                    _LOG.debug(
+                    logging.getLogger("tractor-blade").debug(
                         "Calling filter function on plugin `{}` from `{}`".format(
                             plugin.__class__.__name__,
                             inspect.getfile(func)
@@ -135,7 +139,7 @@ class TractorSiteStatusFilter(TrStatusFilter):
                 try:
                     return func(*function_args, **function_kwargs)
                 except:
-                    _LOG.error(
+                    logging.getLogger("tractor-blade").error(
                         "Fallback to derived implementation, because `{}` failed.".format(func),
                         exc_info=True
                     )
