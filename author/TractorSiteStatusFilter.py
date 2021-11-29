@@ -58,7 +58,7 @@ class TractorSiteStatusFilter(TrStatusFilter):
         self._plugins = Plugins()
 
         def reload_selector():
-
+            import logging  # TODO: as written above - even modules can be missing at some point
             logging.getLogger("tractor-blade").info("Reloading FILTER_SELECTOR...")
 
             import jobtronaut.constants
@@ -77,6 +77,7 @@ class TractorSiteStatusFilter(TrStatusFilter):
 
     def _delegate(self, function, function_args=(), function_kwargs={}, keep_cache=False):
         """ handle function call delegation to plugin """
+        import logging  # TODO: as written above - even modules can be missing at some point
 
         self._reload_selector()
 
