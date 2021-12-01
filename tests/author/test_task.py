@@ -109,6 +109,12 @@ class TestTask(TestCase):
         with patch.object(TaskFixture, "script", create=True, return_value=None):
             self.assertTrue(self._task._has_script(TaskFixture))
 
+    def test_has_env(self):
+        """ check if has_env method works correctly"""
+        self.assertFalse(self._task._has_env(TaskFixture))
+        with patch.object(TaskFixture, "env", create=True, return_value=None):
+            self.assertTrue(self._task._has_env(TaskFixture))
+
     def test_is_expected_iterable(self):
         """ check if _is_expected_iterable works as expected """
         self.assertTrue(self._task._is_expected_iterable([]))
@@ -246,6 +252,7 @@ class TestTask(TestCase):
         self.assertEqual("RemoteCmd", cmds.value[0].attributeByName["constant"].value)  # currently expect all RemoteCmd
         self.assertEqual("some service,another service", cmds.value[0].service)
         self.assertEqual(["some tag", "another tag"], cmds.value[0].tags)
+        self.assertEqual([], cmds.value[0].envkey)
 
     @patch.object(TaskFixture, "cmd", create=True, new=lambda x: ["/some/executable", "test"])
     @patch("jobtronaut.author.task.EXECUTABLE_RESOLVER", new=lambda x: "/bin/echo")
@@ -289,6 +296,17 @@ class TestTask(TestCase):
         _task = TaskFixture(TASK_FIXTURE_ARGUMENTS)
         self._task._add_view(_task)
         self.assertEqual(["test"], _task.attributeByName["chaser"].value)
+
+    @patch.object(TaskFixture, "env", create=True, new=lambda x: {"SOME_ARG": x.arguments.tres.processed})
+    @patch.object(TaskFixture, "cmd", create=True, new=lambda x: ["/some/executable", "test"])
+    @patch("jobtronaut.author.task.EXECUTABLE_RESOLVER", new=lambda x: "/bin/echo")
+    def test_add_command_with_env(self):
+        """ check if we are adding the envkey properly """
+        _task = TaskFixture(TASK_FIXTURE_ARGUMENTS)
+        self._task._add_command(_task)
+
+        for cmd in _task.attributeByName["cmds"]:
+            self.assertEqual(["setenv SOME_ARG={}".format(TASK_FIXTURE_ARGUMENTS["tres"])], cmd.envkey)
 
 
 class TestTaskOverrides(TestCase):
