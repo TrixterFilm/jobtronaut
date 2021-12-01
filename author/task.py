@@ -272,6 +272,10 @@ class Task(author.Task):
         return "view" in dir(cls) and callable(cls.view)
 
     @staticmethod
+    def _has_env(cls):
+        return "env" in dir(cls) and callable(cls.env)
+
+    @staticmethod
     def _is_expected_iterable(obj):
         """ simply check if the object is dedicated for iteration
 
@@ -496,6 +500,7 @@ class Task(author.Task):
         """
         has_cmd = self._has_cmd(task.__class__)
         has_script = self._has_script(task.__class__)
+        has_env = self._has_env(task.__class__)
 
         _cmd_str = "Added command '{0}' to task {1}"
 
@@ -524,7 +529,8 @@ class Task(author.Task):
                 service=",".join(task.services),
                 tags=task.tags,
                 retryrc=task.retryrc,
-                local=local
+                local=local,
+                envkey=self._get_serialized_envkey() if has_env else []
             )
             _LOG.debug(_cmd_str.format(" ".join(cmd), task))
 
@@ -679,6 +685,16 @@ class Task(author.Task):
         """
         if self._has_view(task.__class__):
             task.chaser = task.view()
+
+    def _get_serialized_envkey(self):
+        """ get the properly formatted result of self.env() digestible for tractors default envhandler """
+        mapping = self.env()
+        assert isinstance(mapping, dict), (
+            "Given return value of {} is not of expected type `dict`. Got `{}` instead."
+        ).format(self, type(mapping))
+
+        return ["setenv " + " ".join(["{0}={1}".format(key, value) for key, value in mapping.items()])]
+
 
     @classmethod
     def info(cls, short=True):
