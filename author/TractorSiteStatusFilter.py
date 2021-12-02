@@ -22,7 +22,6 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                                 #
 # ######################################################################################################################
 
-import inspect
 import logging
 
 from tractor.apps.blade.TrStatusFilter import TrStatusFilter
@@ -78,6 +77,7 @@ class TractorSiteStatusFilter(TrStatusFilter):
     def _delegate(self, function, function_args=(), function_kwargs={}, keep_cache=False):
         """ handle function call delegation to plugin """
         import logging  # TODO: as written above - even modules can be missing at some point
+        import inspect
 
         self._reload_selector()
 
