@@ -693,8 +693,10 @@ class Task(author.Task):
             "Given return value of {} is not of expected type `dict`. Got `{}` instead."
         ).format(self, type(mapping))
 
-        return ["setenv " + " ".join(["{0}={1}".format(key, value) for key, value in mapping.items()])]
-
+        if mapping:
+            return ["setenv " + " ".join(["{0}={1}".format(key, value) for key, value in mapping.items()])]
+        else:
+            return []
 
     @classmethod
     def info(cls, short=True):

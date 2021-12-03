@@ -308,6 +308,14 @@ class TestTask(TestCase):
         for cmd in _task.attributeByName["cmds"]:
             self.assertEqual(["setenv SOME_ARG={}".format(TASK_FIXTURE_ARGUMENTS["tres"])], cmd.envkey)
 
+        # handle an empty environment, we don't expect the envkey be set then
+        with patch.object(TaskFixture, "env", create=True, new=lambda x: {}):
+            _task = TaskFixture(TASK_FIXTURE_ARGUMENTS)
+            self._task._add_command(_task)
+
+            for cmd in _task.attributeByName["cmds"]:
+                self.assertEqual([], cmd.envkey)
+
 
 class TestTaskOverrides(TestCase):
 
