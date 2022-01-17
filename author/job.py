@@ -35,6 +35,7 @@ import os
 import sys
 import tempfile
 import uuid
+import inspect
 
 from datetime import date
 
@@ -183,13 +184,15 @@ class Job(author.Job):
         Returns:
 
         """
+        spool_signature_arg_names = [_ for _ in inspect.getargspec(self.spool).args if _ not in ("self",)]
         for name, value in kwargs.iteritems():
-            # tractor does not like unicode; we automatically convert to ASCII
-            if isinstance(value, unicode):
-                value = str(value)
-            assert self.attributeByName.get(name, None), \
-                   "Invalid keyword argument for job submission: \"{}\"".format(name)
-            self.__setattr__(name, value)
+            if name not in spool_signature_arg_names:
+                # tractor does not like unicode; we automatically convert to ASCII
+                if isinstance(value, unicode):
+                    value = str(value)
+                assert self.attributeByName.get(name, None), \
+                       "Invalid keyword argument for job submission: \"{}\"".format(name)
+                self.__setattr__(name, value)
 
     @staticmethod
     def _resolve_job_file(job_id):
@@ -263,16 +266,22 @@ class Job(author.Job):
 
             return ""
 
+        # Override spool signature arguments passed through submit arguments
+        spool_signature_arg_names = [_ for _ in inspect.getargspec(self.spool).args if _ not in ("self",)]
+        spool_args = {}
+        for key, value in kwargs.iteritems():
+            if key in spool_signature_arg_names:
+                spool_args[key] = value
+
         # allow to override the host and port configured via TRACTOR_ENGINE string
-        hostname, port = kwargs.get("hostname"), kwargs.get("port")
-        if TRACTOR_ENGINE and not hostname and not port:
+        if TRACTOR_ENGINE and not any(_ in spool_args for _ in ("hostname", "port")):
             _tractor_engine_tokens = TRACTOR_ENGINE.split(":")
-            hostname, port = _tractor_engine_tokens[0], int(_tractor_engine_tokens[1])
+            spool_args["hostname"] = _tractor_engine_tokens[0]
+            spool_args["port"] = int(_tractor_engine_tokens[1])
 
         job_id = self.spool(
             owner=getpass.getuser(),
-            hostname=hostname,
-            port=port
+            **spool_args
         )
 
         if dump_job:
