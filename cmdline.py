@@ -149,6 +149,10 @@ def submit(args):
     a job according the the specified arguments.
     """
 
+    from .query import initialize_engine
+
+    initialize_engine()
+
     jid = None
     # @todo Add arguments to the jobs and tasks metadata
     try:

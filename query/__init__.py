@@ -33,6 +33,10 @@ def initialize_engine():
     Returns:
 
     """
+    from ..constants import (
+        TRACTOR_ENGINE_CREDENTIALS_RESOLVER,
+        TRACTOR_ENGINE
+    )
 
     def _do_test():
         try:
@@ -42,11 +46,6 @@ def initialize_engine():
             return False
 
     def _set_engine_params():
-        from ..constants import (
-            TRACTOR_ENGINE_CREDENTIALS_RESOLVER,
-            TRACTOR_ENGINE
-        )
-
         if TRACTOR_ENGINE:
             hostname, port = TRACTOR_ENGINE.split(":")
 
@@ -63,7 +62,7 @@ def initialize_engine():
             )
 
     # an initial test is likely to fail because no user/password was set
-    if not _do_test():
+    if TRACTOR_ENGINE or not _do_test():
         # just set the credentials
         _set_engine_params()
 
