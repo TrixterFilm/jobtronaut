@@ -27,8 +27,14 @@ import tractor.api.query as tractor_query
 from tractor.api.author.base import ModuleEngineClient
 
 
-def initialize_engine():
+def initialize_engine(invalidate_session=False):
     """ Initialize Tractor Engine Client
+
+    Keyword Args:
+        invalidate_session: If given and True it will discard the last session.
+            This might be required if you jumping between different engines and otherwise
+            result in the situation that you are using the query module with an unexpected
+            engine.
 
     Returns:
 
@@ -60,6 +66,9 @@ def initialize_engine():
                 user=TRACTOR_ENGINE_CREDENTIALS_RESOLVER()[0],
                 password=TRACTOR_ENGINE_CREDENTIALS_RESOLVER()[1]
             )
+
+    if invalidate_session:
+        ModuleEngineClient.tsid = None
 
     # an initial test is likely to fail because no user/password was set
     if TRACTOR_ENGINE or not _do_test():
