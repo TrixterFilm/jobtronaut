@@ -23,6 +23,7 @@
 # ######################################################################################################################
 
 from jobtronaut.author.task import Task
+from jobtronaut.author.processor import ProcessorDefinition
 
 
 TASK_FIXTURE_ARGUMENTS = {
@@ -39,3 +40,40 @@ class TaskFixture(Task):
 
 class CmdTaskFixture(Task):
     pass
+
+
+class TaskFixtureWithArgumentProcessors(Task):
+    elements_id = "test_argument"
+
+    argument_processors = [
+        ProcessorDefinition(
+            "CopyValueProcessor",
+            parameters={
+                "value": "one"
+            }
+        ),
+        ProcessorDefinition(
+            "CopyValueProcessor",
+            parameters={
+                "value": "two"
+            }
+        ),
+        ProcessorDefinition(
+            "CopyValueProcessor",
+            parameters={
+                "value": "three"
+            }
+        ),
+        ProcessorDefinition(
+            "CopyValueProcessor",
+            parameters={
+                "value": "four"
+            }
+        ),
+        ProcessorDefinition(
+            "CopyValueProcessor",
+            parameters={
+                "value": "five"
+            }
+        )
+    ]

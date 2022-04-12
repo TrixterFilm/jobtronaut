@@ -22,26 +22,30 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                                 #
 # ######################################################################################################################
 
-from collections import namedtuple
-from mock import patch, PropertyMock
 import os
+from collections import namedtuple
 
-from .. import TestCase
-from .task_fixtures import tasks
-from .task_fixtures.tasks import (
-    TaskFixture,
-    SERIALIZED_ARGUMENTS_EXEEDED_LIMIT,
-    TASK_FIXTURE_ARGUMENTS,
+from mock import (
+    patch,
+    PropertyMock
 )
+
 from jobtronaut.author import (
     ArgumentValue,
-    scripts,
     Task,
     TaskWithOverrides
 )
 from jobtronaut.constants import (
     COMMANDFLAGS_ARGUMENT_NAME
 )
+from .task_fixtures import tasks
+from .task_fixtures.tasks import (
+    TaskFixture,
+    SERIALIZED_ARGUMENTS_EXEEDED_LIMIT,
+    TASK_FIXTURE_ARGUMENTS,
+)
+from .. import TestCase
+
 
 JOB_PATCH = namedtuple('job', ["arguments_cache", "arguments_file", "append_instances", "local"])
 JOB_PATCH.arguments_cache = {}
@@ -54,7 +58,7 @@ class TestTask(TestCase):
     @classmethod
     def setUp(cls):
         TaskFixture.required_tasks = []  # until we don't have a good way to mock our class attributes we have to reset
-                                         # some of the attributes to the initial values
+        # some of the attributes to the initial values
         cls._task = TaskFixture(TASK_FIXTURE_ARGUMENTS)
         cls._task.MEMBERS.append("flags")  # we have to add it to the members, otherwise we are not able to patch
         cls._task.MEMBERS.append("services")
@@ -168,7 +172,8 @@ class TestTask(TestCase):
 
     @patch.object(TaskFixture, "cmd", create=True, new=lambda x: ["/bin/echo", "test"])
     def test_get_commandlist_with_additional_command_flags_not_matching_dict(self):
-        with patch.object(TaskFixture, "argument_defaults", new={COMMANDFLAGS_ARGUMENT_NAME: {"no/match": "-hello f -world p"}}):
+        with patch.object(TaskFixture, "argument_defaults",
+                          new={COMMANDFLAGS_ARGUMENT_NAME: {"no/match": "-hello f -world p"}}):
             _task = TaskFixture(TASK_FIXTURE_ARGUMENTS)
             expected_result = ["/bin/echo", "test"]
 
@@ -178,10 +183,12 @@ class TestTask(TestCase):
             # check if our task holds the subtask with a correctly set argv value
             self.assertEqual(
                 expected_result,
-                _task.attributeByName["subtasks"].value[0].attributeByName["cmds"].value[0].attributeByName["argv"].value
+                _task.attributeByName["subtasks"].value[0].attributeByName["cmds"].value[0].attributeByName[
+                    "argv"].value
             )
 
-        with patch.object(TaskFixture, "argument_defaults", new={COMMANDFLAGS_ARGUMENT_NAME: {"in/ec": "-hello f -world p"}}):
+        with patch.object(TaskFixture, "argument_defaults",
+                          new={COMMANDFLAGS_ARGUMENT_NAME: {"in/ec": "-hello f -world p"}}):
             _task = TaskFixture(TASK_FIXTURE_ARGUMENTS)
             expected_result = ["/bin/echo", "-hello", "f", "-world", "p", "test"]
 
@@ -191,7 +198,8 @@ class TestTask(TestCase):
             # check if our task holds the subtask with a correctly set argv value
             self.assertEqual(
                 expected_result,
-                _task.attributeByName["subtasks"].value[0].attributeByName["cmds"].value[0].attributeByName["argv"].value
+                _task.attributeByName["subtasks"].value[0].attributeByName["cmds"].value[0].attributeByName[
+                    "argv"].value
             )
 
     @patch.object(TaskFixture, "script", create=True, new=lambda x: "print 'test'")
@@ -211,8 +219,8 @@ class TestTask(TestCase):
                     "/bin/echo",
                     "test",
                     "from jobtronaut.author.plugins import Plugins;task=Plugins().task(\"TaskFixture\")(\"AAAAA\");task.script()"
-                 ],
-                 self._task._get_commandlist_with_script_call(_task)
+                ],
+                self._task._get_commandlist_with_script_call(_task)
             )
 
         # check filedump when we hit the characters limit for the serialized objects
@@ -222,7 +230,7 @@ class TestTask(TestCase):
                     "/bin/echo",
                     "test",
                     "from jobtronaut.author.plugins import Plugins;task=Plugins().task(\"TaskFixture\")(\"/temp/foobar/attributes.json:12\");task.script()"
-                 ],
+                ],
                 self._task._get_commandlist_with_script_call(_task)
             )
 
@@ -233,7 +241,7 @@ class TestTask(TestCase):
                         "/bin/echo",
                         "test",
                         "from jobtronaut.author.plugins import Plugins;task=Plugins().task(\"TaskFixture\")(\"AAAAA\");task.script();task.neutralize_commands()"
-                     ],
+                    ],
                     self._task._get_commandlist_with_script_call(_task)
                 )
 
@@ -342,3 +350,55 @@ class TestTaskOverrides(TestCase):
         self.assertHasAttribute(_task, "_has_overrides")
         self.assertEqual("A Task based on CmdTaskFixture", _task.title)
         self.assertEqual(["linux64"], _task.services)
+
+    @patch("jobtronaut.author.plugins.PLUGIN_PATH", new=[os.path.dirname(tasks.__file__)])
+    def test_get_with_argumentprocessoroverrides(self):
+        from jobtronaut.author.processor import ProcessorDefinition
+
+        tests = [
+            (["foobar"], TypeError, "Overrides must be type tuple"),
+            (("foobar",), ValueError, "must at least include two items"),
+            (("foobar", 0), ValueError, "Action not supported:"),
+            (("remove", []), TypeError, "Second argument must be "),
+            (("insert", slice(0, 1), ProcessorDefinition("AS")), TypeError, "Second argument must be "),
+            (("insert", 0, "Hello"), AssertionError, "Argument overrides must be ProcessorDefinition"),
+            (("insert", 0), AssertionError, "action must have 3 or more arguments"),
+            (("remove", 0, 0, 0), AssertionError, "action must have 2 arguments"),
+            (("replace", 0, 0, 0), AssertionError, "action must have 3 arguments"),
+        ]
+
+        for input_, exc_type, expected_message in tests:
+            with self.assertRaises(exc_type) as context:
+                # noinspection PyTypeChecker
+                _task = TaskWithOverrides(
+                    "TaskFixtureWithArgumentProcessors",
+                    argument_processors=TaskWithOverrides.ArgumentProcessorOverrides(
+                        input_
+                    )
+                ).get()
+            self.assertIn(expected_message, context.exception.message)
+
+        overrides = TaskWithOverrides.ArgumentProcessorOverrides(
+            (
+                "insert", 0, ProcessorDefinition(
+                    "CopyValueProcessor",
+                    parameters={"value": "test-zero"}
+                )
+            ),
+            ("remove", 1),
+            ("remove", slice(1, 3)),
+            (
+                "replace", 2, ProcessorDefinition(
+                    "CopyValueProcessor",
+                    parameters={"value": "test-five"}
+                )
+            )
+        )
+        _task = TaskWithOverrides(
+            "TaskFixtureWithArgumentProcessors",
+            argument_processors=overrides
+        ).get()
+
+        self.assertEqual("test-zero", _task.argument_processors[0].parameters["value"])
+        self.assertEqual("four", _task.argument_processors[1].parameters["value"])
+        self.assertEqual("test-five", _task.argument_processors[2].parameters["value"])
