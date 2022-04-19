@@ -60,6 +60,7 @@ from ..constants import (
     LOGGING_NAMESPACE
 )
 from .plugins import Plugins
+from .processor import _ProcessorDefinition
 from .command import Command
 from .job import (
     Job,
@@ -838,6 +839,73 @@ class TaskWithOverrides(object):
     changing the required_task attribute for instance.
 
     """
+
+    class ArgumentProcessorOverrides(object):
+
+        valid_actions = ["insert", "remove", "replace"]
+
+        def __init__(self, *actions):
+            if not all(isinstance(x, tuple) for x in actions):
+                raise TypeError("Overrides must be type tuple.")
+
+            for action in actions:
+                if len(action) < 2:
+                    raise ValueError(
+                        "A given argument override must at least include two items."
+                    )
+                elif action[0] == "insert":
+                    assert len(action) >= 3, \
+                        "\"insert\" action must have 3 or more arguments"
+                elif action[0] == "remove":
+                    assert len(action) == 2, \
+                        "\"remove\" action must have 2 arguments"
+                elif action[0] == "replace":
+                    assert len(action) == 3, \
+                        "\"replace\" action must have 3 arguments"
+                elif action[0] not in self.valid_actions:
+                    raise ValueError(
+                        "Action not supported: {!r}. Supported: {}".format(
+                            action[0],
+                            ", ".join(self.valid_actions)
+                        )
+                    )
+
+                if len(action) > 2:
+                    assert all(isinstance(x, _ProcessorDefinition) for x in action[2:]), \
+                        "Argument overrides must be ProcessorDefinition"
+
+                type_check = int
+                if action[0] == "remove":
+                    type_check = (int, slice)
+                if not isinstance(action[1], type_check):
+                    raise TypeError("Second argument must be {!r}".format(type_check))
+
+            self._actions = actions
+
+        def _apply(self, argument_processors):
+            result = copy.copy(argument_processors)
+
+            for _override in self._actions:
+                action = _override[0]
+                index = _override[1]
+                arguments = _override[2:]
+
+                if action == "remove":
+                    if isinstance(index, int):
+                        slice_ = slice(index, index + 1)
+                    else:
+                        slice_ = index
+                    result = [x for x in result if x not in result[slice_]]
+
+                elif action == "insert":
+                    for processor in reversed(arguments):
+                        result.insert(index, processor)
+                elif action == "replace":
+                    result[index] = arguments[0]
+
+            return result
+
+
     def __init__(self, basetask, **overrides):
         """ Given a base Task this class allows you to generate a subclass with
         overrides.
@@ -885,7 +953,11 @@ class TaskWithOverrides(object):
             # we are comparing against the defaults to log proper information about
             # the effective overrides
             if self.overrides[override] != getattr(task_cls, override):
-                overrides[override] = self.overrides[override]
+
+                if isinstance(self.overrides[override], TaskWithOverrides.ArgumentProcessorOverrides):
+                    overrides[override] = self.overrides[override]._apply(getattr(task_cls, override))
+                else:
+                    overrides[override] = self.overrides[override]
 
         if overrides:
             # create the subclass based on overrides
