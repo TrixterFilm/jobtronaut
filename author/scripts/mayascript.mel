@@ -28,4 +28,4 @@
 // of executing python code directy as we would need within the current implementation of Task.script() within
 // the farmsubmission API.
 
-python( "import sys;exec(sys.argv[-1])" );
+python( "import sys, traceback\ntry:\n    exec(sys.argv[-1])\nexcept Exception:\n    traceback.print_exc(); raise;" );
