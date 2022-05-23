@@ -40,6 +40,10 @@ class TrStatusFilter(_TrStatusFilter):
 
         self.persistent_data = persistent_data
 
+    # The default TrSiteStatusFilter doesn't implement a SubprocessPreStart method (yet).
+    def SubprocessPreStart(self, cmd, profile):
+        pass
+
     @classmethod
     def info(cls, short=True):
         """ Provides a nicely formatted representation to be used as a terminal

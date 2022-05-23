@@ -162,6 +162,17 @@ class TractorSiteStatusFilter(TrStatusFilter):
     def SubprocessFailedToStart(self, cmd):
         return self._delegate(self.super.SubprocessFailedToStart, (cmd, ), keep_cache=True)
 
+    def SubprocessPreStart(self, cmd, profile):
+        # A default TrSiteStatusFilter instance won't have this method
+        if not hasattr(self.super, "SubprocessPreStart"):
+            def SubprocessPreStart(cmd, profile):
+                pass
+            # Lets create a placeholder to delegate to incase it doesn't exist on the
+            # delegated Plugin.
+            return self._delegate(SubprocessPreStart, (cmd, profile))
+        else:
+            return self._delegate(self.super.SubprocessPreStart, (cmd, profile))
+
     def SubprocessStarted(self, cmd):
         return self._delegate(self.super.SubprocessStarted, (cmd, ))
 
