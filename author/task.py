@@ -201,8 +201,17 @@ class Task(author.Task):
             _LOG.debug("Handletask {}. Adding simple dependency...".format(self))
             self._add_command_tasks(*args, **kwargs)
         elif self.elements_id and self.per_element and self._is_expected_iterable(getattr(self.elements, "processed", None)):
-            for element in self.elements.processed:
-                element = ArgumentValue(self.elements.initial, element)
+            elements = []
+            if isinstance(self.elements.processed, dict):
+                for key_value in self.elements.processed.items():
+                    element = ArgumentValue(self.elements.initial, key_value)
+                    elements.append(element)
+            else:
+                for element in self.elements.processed:
+                    element = ArgumentValue(self.elements.initial, element)
+                    elements.append(element)
+
+            for element in elements:
                 self._add_required_tasks(self.required_tasks, self, elements=element, *args, **kwargs)
         else:
             self._add_required_tasks(self.required_tasks, self, elements=self.elements, *args, **kwargs)
