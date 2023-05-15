@@ -92,6 +92,8 @@ class Plugins(Singleton):
                 _LOG.warning(message)
                 for cls in self._parse_and_find_classes(path):
                     self.__not_loaded[cls] = (path, message)
+            except:
+                _LOG.warning("Plugins from {} could not be sourced.".format(path), exc_info=True)
         return modules
 
     @staticmethod
