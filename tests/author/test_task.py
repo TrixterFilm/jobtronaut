@@ -31,6 +31,7 @@ from mock import (
 )
 
 from jobtronaut.author import (
+    Arguments,
     ArgumentValue,
     Task,
     TaskWithOverrides
@@ -295,6 +296,25 @@ class TestTask(TestCase):
         mock_per_element.return_value = True
         _task = TaskFixture(TASK_FIXTURE_ARGUMENTS)
         self.assertEqual(len(_task.arguments[_task.elements_id].initial), len(_task.subtasks))
+
+        # lets check if the PER_ELEMENT resolved contain the proper element/ArgumentValue
+        index = 0
+        for handle_task in _task.subtasks:
+            for command_task in handle_task.subtasks:
+                self.assertEqual(command_task.elements.processed, _task.arguments[_task.elements_id].initial[index])
+            index += 1
+
+        TASK_FIXTURE_ARGUMENTS["test_argument"] = {"a": 1, "b": 2}
+        _task = TaskFixture(TASK_FIXTURE_ARGUMENTS)
+        all_items_sorted = sorted(list(TASK_FIXTURE_ARGUMENTS["test_argument"].items()), key=lambda item: item[0])
+        all_command_tasks = []
+        for handle_task in _task.subtasks:
+            for command_task in handle_task.subtasks:
+                all_command_tasks.append(command_task)
+        all_elements_sorted = sorted([_.elements.processed for _ in all_command_tasks], key=lambda item: item[0])
+
+        self.assertEqual(all_elements_sorted, all_items_sorted)
+
 
     @patch.object(TaskFixture, "view", create=True, new=lambda x: x.cmd()[-1])
     @patch.object(TaskFixture, "cmd", create=True, new=lambda x: ["/some/executable", "test"])
